@@ -21,6 +21,7 @@ Build a sophisticated data grid application using Next.js 15 and React 19 that d
    - Add global search functionality
    - Support pagination (20 rows per page default)
    - Add export functionality (Excel, CSV)
+   - Array of skils should be displayed in the grid each in their own column just like the other columns in the grid
 
 2. State Management
    - Implement URL-based state management using nuqs
