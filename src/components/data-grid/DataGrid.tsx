@@ -133,7 +133,10 @@ export function DataGrid({
 
     if (gridState.filterModel) {
       const api = gridApiSafe(gridApiRef.current);
-      api.setFilterModel(JSON.parse(gridState.filterModel));
+      const filterModel = typeof gridState.filterModel === 'string' 
+        ? JSON.parse(gridState.filterModel) 
+        : gridState.filterModel;
+      api.setFilterModel(filterModel);
     }
 
     const api = gridApiSafe(gridApiRef.current);

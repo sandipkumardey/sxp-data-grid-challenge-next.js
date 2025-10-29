@@ -1,0 +1,19 @@
+/* Mock for AG Grid CSS */
+.ag-root {
+  font-family: inherit;
+  font-size: 14px;
+}
+
+.ag-header {
+  background-color: #f8f9fa;
+}
+
+.ag-row {
+  border-bottom: 1px solid #dee2e6;
+}
+
+.ag-cell {
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+}

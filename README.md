@@ -1,53 +1,159 @@
-# Next.js Data Grid Implementation Challenge
+# Job Applications Dashboard
 
-## Overview
-Build a sophisticated data grid application using Next.js 15 and React 19 that demonstrates your expertise in modern web development practices, state management, and TypeScript.
+A sophisticated data grid application built with Next.js 15, React 19, and AG Grid, featuring advanced data manipulation and URL-based state management.
 
-## Requirements
+## ✨ Features
 
-### Tech Stack
-- Next.js 15 with React 19
-- TypeScript (strict mode)
-- shadcn/ui for UI components
-- AG Grid Community for data grid
-- nuqs for URL state management
-- Bun.js as package manager (preferred)
+- **Data Grid**
+  - Display and interact with tabular data
+  - Column filtering and sorting
+  - Column reordering and hiding
+  - Global search across all columns
+  - Pagination (20 rows per page default)
+  - Export to Excel and CSV formats
 
-### Core Features
-1. Data Grid Implementation
-   - Use sample data from `sample-applications.json` in project root
-   - Implement column filtering and sorting
-   - Enable column reordering and hiding
-   - Add global search functionality
-   - Support pagination (20 rows per page default)
-   - Add export functionality (Excel, CSV)
-   - Array of skils should be displayed in the grid each in their own column just like the other columns in the grid
+- **State Management**
+  - URL-based state persistence using nuqs
+  - Shareable URLs with all grid state preserved
+  - State includes: hidden columns, sort order, current page, filters, and search query
 
-2. State Management
-   - Implement URL-based state management using nuqs
-   - URL should reflect:
-     - Hidden columns
-     - Sort order and column
-     - Current page number
-     - Active filters
-     - Search query
-     - Rows per page selection
+- **Tech Stack**
+  - Next.js 15 with App Router
+  - React 19 with TypeScript (strict mode)
+  - shadcn/ui for accessible UI components
+  - AG Grid Community for high-performance data grid
+  - Tailwind CSS for styling
+  - nuqs for URL state management
 
-3. TypeScript
-   - Implement proper type definitions
-   - Ensure type safety across the application
-   - No implicit any types
+## 🚀 Getting Started
 
-## Getting Started
+### Prerequisites
 
-1. Create a new public GitHub repository
-2. Clone the base project
-3. Replace this README with your implementation
-4. Share your repository link for review
+- Node.js 18+
+- Bun (recommended) or npm
 
-## Evaluation Criteria
-- Code quality and organization
-- TypeScript implementation
+### Installation
+
+1. Clone the repository:
+   ```bash
+   git clone <repository-url>
+   cd <project-directory>
+   ```
+
+2. Install dependencies:
+   ```bash
+   # Using Bun (recommended)
+   bun install
+
+   # Or using npm
+   npm install
+   ```
+
+3. Start the development server:
+   ```bash
+   # Using Bun (recommended)
+   bun dev
+
+   # Or using npm
+   npm run dev
+   ```
+
+4. Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+## 🛠️ Available Scripts
+
+- `bun dev` - Start the development server
+- `bun build` - Build the application for production
+- `bun start` - Start the production server
+- `bun test` - Run tests
+- `bun lint` - Run ESLint
+
+## 🧪 Testing
+
+Run the test suite with:
+
+```bash
+bun test
+```
+
+## 🏗️ Building for Production
+
+1. Create a production build:
+   ```bash
+   bun run build
+   ```
+
+2. Start the production server:
+   ```bash
+   bun start
+   ```
+
+## 📦 Dependencies
+
+- [Next.js](https://nextjs.org/) - React framework
+- [React](https://reactjs.org/) - UI library
+- [TypeScript](https://www.typescriptlang.org/) - Type checking
+- [AG Grid](https://www.ag-grid.com/) - Data grid
+- [shadcn/ui](https://ui.shadcn.com/) - UI components
+- [Tailwind CSS](https://tailwindcss.com/) - Styling
+- [nuqs](https://github.com/47ng/nuqs) - URL state management
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🏗️ Project Structure
+
+```
+src/
+├── app/                  # Next.js app router pages
+│   └── page.tsx          # Main application page
+├── components/           # Reusable components
+│   ├── data-grid/        # Data grid related components
+│   └── ui/               # shadcn/ui components
+├── hooks/                # Custom React hooks
+├── lib/                  # Utility functions
+├── types/                # TypeScript type definitions
+└── styles/               # Global styles
+```
+
+## 🔧 Technologies Used
+
+- **Frontend Framework**: Next.js 15 with React 19
+- **UI Components**: shadcn/ui (Radix UI + Tailwind CSS)
+- **Data Grid**: AG Grid Community
+- **State Management**: React hooks + URL state with nuqs
+- **Styling**: Tailwind CSS
+- **Build Tool**: Bun (or npm)
+- **Testing**: Jest, React Testing Library
+
+## 📦 Deployment
+
+### Vercel (Recommended)
+
+1. Push your code to a GitHub, GitLab, or Bitbucket repository
+2. Import your repository on [Vercel](https://vercel.com/import)
+3. Vercel will automatically detect Next.js and configure the build settings
+4. Deploy!
+
+### Netlify
+
+1. Push your code to a Git repository
+2. Create a new site in Netlify and link to your repository
+3. Set the build command to `npm run build`
+4. Set the publish directory to `.next`
+5. Deploy!
+
+## 📝 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- [Next.js](https://nextjs.org/) - The React Framework for Production
+- [AG Grid](https://www.ag-grid.com/) - The Best JavaScript Grid in the World
+- [shadcn/ui](https://ui.shadcn.com/) - Beautifully designed components
+- [Tailwind CSS](https://tailwindcss.com/) - A utility-first CSS framework
 - Feature completeness
 - Build success (zero warnings/errors)
 - Git commit history
