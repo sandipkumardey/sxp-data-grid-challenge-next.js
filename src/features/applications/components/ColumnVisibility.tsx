@@ -11,75 +11,54 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-
-// Type for AG Grid's ColumnApi
-type ColumnApi = any;
+import type { ColDef, Column } from '@ag-grid-community/core';
 
 interface ColumnVisibilityProps {
-  columnApi: ColumnApi | null;
-  columnDefs: any[];
-  columnState: any[];
-  onColumnStateChange: (state: any[]) => void;
+  columnDefs: ColDef[];
+  onColumnVisibilityChanged: (params: { column: Column; visible: boolean }[]) => void;
 }
 
 export function ColumnVisibility({
-  columnApi,
   columnDefs,
-  columnState,
-  onColumnStateChange,
+  onColumnVisibilityChanged,
 }: ColumnVisibilityProps) {
-  const handleColumnToggle = (colId: string, hide: boolean) => {
-    if (!columnApi) return;
-    
-    // Update column visibility
-    columnApi.setColumnVisible(colId, !hide);
-    
-    // Update the column state in parent component
-    const newState = [...(columnState || [])];
-    const colState = newState.find(col => col.colId === colId);
-    
-    if (colState) {
-      colState.hide = hide;
-    } else {
-      newState.push({ colId, hide });
+  const handleColumnToggle = (colId: string, visible: boolean) => {
+    const column = columnDefs.find(col => col.field === colId);
+    if (column) {
+      onColumnVisibilityChanged([{ column: { getColId: () => colId } as Column, visible }]);
     }
-    
-    onColumnStateChange(newState);
   };
 
-  // Create a map of column IDs to their current visibility state
-  const columnVisibility = useMemo(() => {
-    const visibility: Record<string, boolean> = {};
-    columnDefs.forEach(col => {
-      visibility[col.field] = !columnState?.some(cs => cs.colId === col.field && cs.hide);
-    });
-    return visibility;
-  }, [columnDefs, columnState]);
+  // Get visible columns
+  const visibleColumns = useMemo(() => {
+    return columnDefs.filter(col => !col.hide).map(col => col.field as string);
+  }, [columnDefs]);
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="outline" size="sm" className="gap-2">
           <Columns className="h-4 w-4" />
-          <span className="hidden sm:inline">Columns</span>
+          <span>Columns</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-48">
+      <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        {columnDefs.map((column) => (
-          <DropdownMenuCheckboxItem
-            key={column.field}
-            checked={columnVisibility[column.field] ?? true}
-            onCheckedChange={(checked) => handleColumnToggle(column.field, !checked)}
-            className="flex items-center"
-          >
-            {column.headerName || column.field}
-            {columnVisibility[column.field] && (
-              <Check className="ml-auto h-4 w-4" />
-            )}
-          </DropdownMenuCheckboxItem>
-        ))}
+        {columnDefs
+          .filter(col => col.field && col.headerName)
+          .map((col) => (
+            <DropdownMenuCheckboxItem
+              key={col.field as string}
+              checked={visibleColumns.includes(col.field as string)}
+              onCheckedChange={(checked) =>
+                handleColumnToggle(col.field as string, checked)
+              }
+              className="cursor-pointer"
+            >
+              {col.headerName}
+            </DropdownMenuCheckboxItem>
+          ))}
       </DropdownMenuContent>
     </DropdownMenu>
   );

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
+import { useTheme } from 'next-themes';
 import type { 
   ColDef, 
   GridReadyEvent, 
@@ -9,12 +10,25 @@ import type {
   GridOptions,
   ColumnState,
   SortModelItem,
-  Column
+  Column,
+  ICellRendererParams,
+  IHeaderParams
 } from '@ag-grid-community/core';
+
+// Import AG Grid styles
+import '@ag-grid-community/styles/ag-grid.css';
+import '@ag-grid-community/styles/ag-theme-alpine.css';
+import '@/styles/ag-theme-custom.css';
 
 // Type for AG Grid's ColumnApi
 type ColumnApi = any; // Using any as a fallback for ColumnApi
 import { ClientSideRowModelModule } from '@ag-grid-community/client-side-row-model';
+import { ModuleRegistry } from '@ag-grid-community/core';
+
+// Register the required modules
+ModuleRegistry.registerModules([
+  ClientSideRowModelModule
+]);
 
 // Dynamically import AgGridReact with SSR disabled
 const AgGridReact = dynamic(
@@ -32,10 +46,10 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { FileText, FileSpreadsheet, Download, Search, ClipboardList, Users, Award } from 'lucide-react';
+import { FileText, FileSpreadsheet, Download, Search, ClipboardList, Users, Award, Plus } from 'lucide-react';
 import { ColumnVisibility } from './ColumnVisibility';
 
-// Only using Community Edition modules
+// Define the modules used by AG Grid (Community Edition only)
 const modules = [ClientSideRowModelModule];
 
 import { Application } from '../types/application';
@@ -159,7 +173,7 @@ export function ApplicationsGrid() {
       sortable: true,
       checkboxSelection: true,
       headerCheckboxSelection: true,
-      headerClass: 'font-medium',
+      headerClass: 'bg-gray-50 dark:bg-gray-800/50 font-medium text-sm uppercase tracking-wider text-gray-600 dark:text-gray-300',
       cellClass: 'font-mono text-sm',
     },
     {
@@ -223,6 +237,18 @@ export function ApplicationsGrid() {
         params.value !== undefined && params.value !== null ? `${params.value} LPA` : '',
     },
   ], []);
+
+  // Get current theme
+  const { theme } = useTheme();
+
+  // Update grid theme when theme changes
+  useEffect(() => {
+    if (gridApi) {
+      // Force grid to redraw with new theme
+      gridApi.refreshHeader();
+      gridApi.refreshCells();
+    }
+  }, [theme, gridApi]);
 
   // Grid ready event
   const onGridReady = useCallback((params: GridReadyEvent) => {
@@ -290,7 +316,7 @@ export function ApplicationsGrid() {
       // Use filter instead of quickFilter which might not be available
       gridApi.setFilterModel({
         ...(gridState?.filterModel || {}),
-        ...(value ? { globalQuickFilter: value } : { globalQuickFilter: null })
+        ...(value ? { globalQuickFilter: value } : { globalQuickFilter: undefined })
       });
     }
     updateGridState({ searchQuery: value });
@@ -309,12 +335,80 @@ export function ApplicationsGrid() {
     }
   }, [gridApi, updateGridState]);
 
-  const gridOptions: GridOptions = useMemo(
-    () => ({
-      // ...
-    }),
-    [onGridReady, pagination?.pageSize, gridApi, updateGridState]
-  );
+  // Grid options with enhanced theming and features
+  const gridOptions: GridOptions = {
+    defaultColDef: {
+      sortable: true,
+      filter: true,
+      resizable: true,
+      // Removed menuTabs as it requires Enterprise edition
+      floatingFilter: false, // Disabled as it requires Enterprise edition
+      filterParams: {
+        suppressAndOrCondition: true,
+        buttons: ['reset', 'apply'],
+        closeOnApply: true,
+      },
+      cellClass: 'flex items-center',
+      headerClass: 'font-medium',
+    },
+    // Enable animations
+    animateRows: true,
+    // Enable row selection
+    rowSelection: 'multiple',
+    // UI/UX improvements
+    suppressRowClickSelection: true,
+    suppressCellFocus: true,
+    rowHeight: 56,
+    headerHeight: 48,
+    // Performance optimizations
+    suppressDragLeaveHidesColumns: true,
+    suppressMenuHide: true,
+    suppressContextMenu: true,
+    suppressClipboardPaste: true,
+    suppressExcelExport: true,
+    suppressCsvExport: true,
+    suppressPaginationPanel: true,
+    suppressScrollOnNewData: true,
+    suppressMovableColumns: true,
+    suppressFieldDotNotation: true,
+    // Loading and empty states
+    loadingOverlayComponent: 'customLoadingOverlay',
+    noRowsOverlayComponent: 'customNoRowsOverlay',
+    // Theme and styling
+    rowClass: 'border-b border-gray-100 dark:border-gray-700',
+    // Disable range selection as it requires Enterprise edition
+    enableRangeSelection: false,
+    // Disable status bar as it requires Enterprise edition
+    // statusBar: {
+    //   statusPanels: [
+    //     {
+    //       statusPanel: 'agTotalAndFilteredRowCountComponent',
+    //       align: 'left',
+    //     },
+    //     { statusPanel: 'agSelectedRowCountComponent', align: 'right' },
+    //     { statusPanel: 'agAggregationComponent', align: 'right' },
+    //   ],
+    // },
+    // Add custom tooltips
+    tooltipShowDelay: 500,
+    tooltipHideDelay: 2000,
+    // Enable pagination
+    pagination: true,
+    paginationPageSize: 20,
+    cacheBlockSize: 20,
+    // Enable column animations
+    defaultColGroupDef: { marqueeSelection: true } as any,
+    // Enable keyboard navigation
+    enableCellTextSelection: true,
+    // Enable accessibility
+    enableRtl: false,
+    // Enable custom loading overlay
+    overlayLoadingTemplate:
+      '<div class="custom-loading-overlay"><div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary-500"></div><p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Loading data...</p></div>',
+    // Custom no rows template
+    overlayNoRowsTemplate:
+      '<div class="custom-no-rows-overlay"><svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg><h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">No applications found</h3><p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Get started by adding a new application.</p><div class="mt-6"><button type="button" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"><Plus className="-ml-1 mr-2 h-5 w-5" /> New Application</button></div></div>',
+  };
 
   // Handle export to CSV
   const handleExportCSV = useCallback(() => {
@@ -369,132 +463,140 @@ export function ApplicationsGrid() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Stats Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <StatsCard 
-          title="Total Applications" 
-          value={stats?.total || 0} 
-          icon={FileText} 
-          trend="up"
-          trendValue="12% from last month"
-        />
-        <StatsCard 
-          title="In Review" 
-          value={`${stats?.inReview || 0} (${stats?.inReviewPercent || 0}%)`} 
-          icon={ClipboardList} 
-          trend="up"
-          trendValue="5%"
-        />
-        <StatsCard 
-          title="Interview Stage" 
-          value={`${stats?.interviewStage || 0} (${stats?.interviewPercent || 0}%)`} 
-          icon={Users} 
-          trend="up"
-          trendValue="3%"
-        />
-        <StatsCard 
-          title="Offer Stage" 
-          value={`${stats?.offerStage || 0} (${stats?.offerPercent || 0}%)`} 
-          icon={Award} 
-          trend="down"
-          trendValue="2%"
-        />
+    <div className="flex flex-col h-full">
+      {/* Stats Cards */}
+      {stats && (
+        <div className="grid grid-cols-1 gap-4 mb-6 sm:grid-cols-2 lg:grid-cols-4">
+          <StatsCard 
+            title="Total Applications" 
+            value={stats.total} 
+            icon={FileText} 
+          />
+          <StatsCard 
+            title="In Review" 
+            value={`${stats.inReview} (${stats.inReviewPercent}%)`} 
+            icon={ClipboardList}
+            trend="up"
+            trendValue="12%"
+          />
+          <StatsCard 
+            title="Interview Stage" 
+            value={`${stats.interviewStage} (${stats.interviewPercent}%)`} 
+            icon={Users}
+            trend="up"
+            trendValue="5%"
+          />
+          <StatsCard 
+            title="Offer Stage" 
+            value={`${stats.offerStage} (${stats.offerPercent}%)`} 
+            icon={Award}
+            trend="up"
+            trendValue="3%"
+          />
+        </div>
+      )}
+
+      {/* Grid Controls */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
+        <div className="relative w-full sm:w-80">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <Input
+            type="text"
+            placeholder="Search applications..."
+            className="pl-9 w-full"
+            value={searchQuery}
+            onChange={(e) => updateGridState({ searchQuery: e.target.value })}
+          />
+        </div>
+        <div className="flex items-center space-x-2 w-full sm:w-auto">
+          <ColumnVisibility
+            columnDefs={columnDefs}
+            onColumnVisibilityChanged={(params: { column: Column; visible: boolean }[]) => {
+              if (columnApi) {
+                params.forEach(({ column, visible }) => {
+                  columnApi.setColumnVisible(column.getColId(), visible);
+                });
+              }
+            }}
+          />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-2">
+                <FileSpreadsheet className="h-4 w-4" />
+                <span>Export</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem>
+                <Download className="mr-2 h-4 w-4" />
+                <span>Export as CSV</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <FileText className="mr-2 h-4 w-4" />
+                <span>Export as PDF</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Button size="sm" className="gap-2">
+            <Plus className="h-4 w-4" />
+            <span>Add Application</span>
+          </Button>
+        </div>
       </div>
 
-      {/* Main Grid */}
-      <Card className="shadow-sm">
-        <CardHeader className="pb-4">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <CardTitle className="text-2xl font-bold">Job Applications</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Showing {applications.length} applications
-                {searchQuery ? ` matching "${searchQuery}"` : ''}
-              </p>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-              <div className="relative w-full">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  type="search"
-                  placeholder="Search applications..."
-                  className="w-full pl-9"
-                  value={searchQuery}
-                  onChange={handleSearch}
-                />
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <div className="relative flex-1 sm:flex-none">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    type="search"
-                    placeholder="Search applications..."
-                    className="w-full pl-9 max-w-xs"
-                    value={searchQuery}
-                    onChange={handleSearch}
-                  />
-                </div>
-                <div className="flex items-center gap-2">
-                  <ColumnVisibility 
-                    columnApi={columnApi}
-                    columnDefs={columnDefs}
-                    columnState={columnState || []}
-                    onColumnStateChange={(newState) => updateGridState({ columnState: newState })}
-                  />
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="sm" className="gap-2">
-                        <Download className="h-4 w-4" />
-                        <span className="hidden sm:inline">Export</span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={handleExportCSV}>
-                        <FileText className="mr-2 h-4 w-4" />
-                        <span>Export as CSV</span>
-                      </DropdownMenuItem>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <div>
-                              <DropdownMenuItem 
-                                onClick={handleExportExcel}
-                                className="flex items-center"
-                                disabled
-                              >
-                                <FileSpreadsheet className="mr-2 h-4 w-4" />
-                                <span>Export as Excel (Enterprise)</span>
-                              </DropdownMenuItem>
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Excel export is available in AG Grid Enterprise Edition</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </div>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="ag-theme-alpine w-full h-[600px]">
-            <AgGridReact
-              rowData={applications}
-              columnDefs={columnDefs}
-              onGridReady={onGridReady}
-              gridOptions={gridOptions}
-              modules={modules}
-              rowHeight={48}
-              headerHeight={48}
-              className="text-sm"
-            />
-          </div>
-        </CardContent>
-      </Card>
+      {/* Bulk Actions Bar */}
+      <div className="flex items-center justify-between bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-t-lg px-4 py-2 mb-0.5">
+        <div className="flex items-center space-x-2">
+          <span className="text-sm font-medium text-blue-800 dark:text-blue-200">
+            0 selected
+          </span>
+        </div>
+        <div className="flex items-center space-x-2">
+          <Button variant="ghost" size="sm" className="text-blue-700 hover:bg-blue-100 dark:text-blue-300 dark:hover:bg-blue-800/50">
+            <span>Update Status</span>
+          </Button>
+          <Button variant="ghost" size="sm" className="text-blue-700 hover:bg-blue-100 dark:text-blue-300 dark:hover:bg-blue-800/50">
+            <span>Add to List</span>
+          </Button>
+          <Button variant="ghost" size="sm" className="text-red-600 hover:bg-red-100 dark:text-red-400 dark:hover:bg-red-900/50">
+            <span>Delete Selected</span>
+          </Button>
+        </div>
+      </div>
+
+      {/* AG Grid */}
+      <div className={`ag-theme-custom flex-1 w-full min-h-[500px] rounded-b-lg ${theme === 'dark' ? 'ag-theme-alpine-dark' : ''}`}>
+        <AgGridReact
+          rowData={applications}
+          columnDefs={columnDefs}
+          gridOptions={gridOptions}
+          onGridReady={onGridReady}
+          modules={modules}
+          loadingOverlayComponent="customLoadingOverlay"
+          noRowsOverlayComponent="customNoRowsOverlay"
+          className="w-full h-full ag-theme-custom"
+          // Enable animations
+          animateRows={true}
+          // Enable pagination
+          pagination={true}
+          paginationPageSize={20}
+          // Enable row selection
+          rowSelection="multiple"
+          suppressRowClickSelection={true}
+          // Enable range selection for bulk actions
+          enableRangeSelection={true}
+          // Enable keyboard navigation
+          enableCellTextSelection={true}
+          // Custom tooltips
+          tooltipShowDelay={500}
+          tooltipHideDelay={2000}
+          // Styling
+          getRowClass={() => 'hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors duration-150'}
+          // Performance optimizations
+          suppressColumnVirtualisation={false}
+          suppressRowVirtualisation={false}
+        />
+      </div>
     </div>
   );
 }

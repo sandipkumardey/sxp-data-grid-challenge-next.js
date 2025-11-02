@@ -1,0 +1,117 @@
+/* Light theme variables */
+.ag-theme-custom {
+  --ag-foreground-color: rgb(17, 24, 39);
+  --ag-background-color: #ffffff;
+  --ag-header-background-color: #f9fafb;
+  --ag-odd-row-background-color: #f9fafb;
+  --ag-row-hover-color: #f3f4f6;
+  --ag-selected-row-background-color: #e5e7eb;
+  --ag-border-color: #e5e7eb;
+  --ag-header-foreground-color: #4b5563;
+  --ag-secondary-foreground-color: #6b7280;
+  --ag-disabled-foreground-color: #9ca3af;
+  --ag-input-disabled-background-color: #f9fafb;
+  --ag-input-focus-border-color: #3b82f6;
+  --ag-range-selection-border-color: #3b82f6;
+  --ag-row-border-color: #e5e7eb;
+  --ag-header-cell-hover-background-color: #f3f4f6;
+  --ag-header-cell-moving-background-color: #f3f4f6;
+}
+
+/* Dark theme variables */
+.dark .ag-theme-custom {
+  --ag-foreground-color: #f9fafb;
+  --ag-background-color: #111827;
+  --ag-header-background-color: #1f2937;
+  --ag-odd-row-background-color: #111827;
+  --ag-row-hover-color: #1f2937;
+  --ag-selected-row-background-color: #1e40af;
+  --ag-border-color: #374151;
+  --ag-header-foreground-color: #d1d5db;
+  --ag-secondary-foreground-color: #9ca3af;
+  --ag-disabled-foreground-color: #6b7280;
+  --ag-input-disabled-background-color: #1f2937;
+  --ag-input-focus-border-color: #60a5fa;
+  --ag-range-selection-border-color: #60a5fa;
+  --ag-row-border-color: #374151;
+  --ag-header-cell-hover-background-color: #374151;
+  --ag-header-cell-moving-background-color: #374151;
+}
+
+/* Custom scrollbar for AG Grid */
+.ag-theme-custom .ag-root-wrapper {
+  border-radius: 0.5rem;
+  border: 1px solid var(--ag-border-color);
+  overflow: hidden;
+}
+
+.ag-theme-custom .ag-header {
+  font-weight: 500;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.ag-theme-custom .ag-row {
+  transition: background-color 0.2s ease;
+}
+
+.ag-theme-custom .ag-row-hover {
+  background-color: var(--ag-row-hover-color) !important;
+}
+
+/* Custom checkbox styling */
+.ag-theme-custom .ag-selection-checkbox {
+  margin-right: 0.5rem;
+}
+
+/* Custom filter styling */
+.ag-theme-custom .ag-filter-toolpanel-header,
+.ag-theme-custom .ag-filter-toolpanel-search,
+.ag-theme-custom .ag-filter-toolpanel-group-title {
+  background-color: var(--ag-header-background-color);
+  color: var(--ag-foreground-color);
+}
+
+/* Custom pagination styling */
+.ag-theme-custom .ag-paging-panel {
+  border-top: 1px solid var(--ag-border-color);
+  padding: 0.75rem 1rem;
+  background-color: var(--ag-header-background-color);
+}
+
+/* Status badges */
+.status-badge {
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+}
+
+.status-badge.in-review {
+  @apply bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300;
+}
+
+.status-badge.interview {
+  @apply bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300;
+}
+
+.status-badge.offer {
+  @apply bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300;
+}
+
+.status-badge.rejected {
+  @apply bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300;
+}
+
+/* Action buttons */
+.action-button {
+  @apply p-1.5 rounded-md text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 transition-colors;
+}
+
+/* Custom loading overlay */
+.custom-loading-overlay {
+  @apply flex flex-col items-center justify-center p-4 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm h-full w-full absolute inset-0 z-10;
+}
+
+/* Custom no rows overlay */
+.custom-no-rows-overlay {
+  @apply flex flex-col items-center justify-center p-6 text-center h-full w-full text-gray-500 dark:text-gray-400;
+}
