@@ -25,7 +25,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Download, Search } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Download, Search, Columns, FileText, FileSpreadsheet } from 'lucide-react';
+import { ColumnVisibility } from './ColumnVisibility';
 
 // Only using Community Edition modules
 const modules = [ClientSideRowModelModule];
@@ -263,6 +271,10 @@ export function ApplicationsGrid() {
             if (params.column?.getColDef()?.field === 'createdAt' && params.value) {
               return new Date(params.value).toLocaleDateString();
             }
+            // Handle skills array
+            if (Array.isArray(params.value)) {
+              return params.value.map((s: any) => s.name).join(', ');
+            }
             return params.value;
           },
         });
@@ -271,6 +283,12 @@ export function ApplicationsGrid() {
       }
     }
   }, [gridApi]);
+
+  // Handle export to Excel (CSV fallback for Community Edition)
+  const handleExportExcel = useCallback(() => {
+    // In Community Edition, we'll use CSV as a fallback
+    handleExportCSV();
+  }, [handleExportCSV]);
 
   if (loading) {
     return (
@@ -313,15 +331,47 @@ export function ApplicationsGrid() {
                   onChange={handleSearch}
                 />
               </div>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="gap-2"
-                onClick={handleExportCSV}
-              >
-                <Download className="h-4 w-4" />
-                <span className="hidden sm:inline">Export CSV</span>
-              </Button>
+              <div className="flex gap-2">
+                <ColumnVisibility 
+                  columnApi={columnApi}
+                  columnDefs={columnDefs}
+                  columnState={columnState || []}
+                  onColumnStateChange={(newState) => updateGridState({ columnState: newState })}
+                />
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="gap-2">
+                      <Download className="h-4 w-4" />
+                      <span className="hidden sm:inline">Export</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={handleExportCSV}>
+                      <FileText className="mr-2 h-4 w-4" />
+                      <span>Export as CSV</span>
+                    </DropdownMenuItem>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div>
+                            <DropdownMenuItem 
+                              onClick={handleExportExcel}
+                              className="flex items-center"
+                              disabled
+                            >
+                              <FileSpreadsheet className="mr-2 h-4 w-4" />
+                              <span>Export as Excel (Enterprise)</span>
+                            </DropdownMenuItem>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Excel export is available in AG Grid Enterprise Edition</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </div>
           </div>
         </CardHeader>
