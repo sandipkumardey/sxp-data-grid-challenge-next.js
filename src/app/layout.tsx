@@ -3,11 +3,21 @@ import { Inter } from "next/font/google";
 import { NuqsAdapter } from 'nuqs/adapters/next/app';
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+const inter = Inter({ 
+  subsets: ["latin"], 
+  variable: "--font-inter",
+  display: 'swap'
+});
 
 export const metadata: Metadata = {
-  title: "Job Applications Dashboard",
-  description: "A modern dashboard for managing job applications with advanced filtering and sorting capabilities",
+  title: "JobTrack - Modern Job Application Dashboard",
+  description: "A modern dashboard for managing job applications with advanced filtering, sorting, and analytics capabilities.",
+  keywords: ["job search", "applications", "dashboard", "career", "hiring"],
+  authors: [{ name: "Your Name" }],
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#0f172a" },
+  ],
 };
 
 export default function RootLayout({
@@ -16,8 +26,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="light" style={{ colorScheme: 'light' }}>
-      <body className={`${inter.variable} font-sans antialiased bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100`}>
+    <html lang="en" className={`${inter.variable} light`} suppressHydrationWarning>
+      <body className="font-sans antialiased">
         <NuqsAdapter>
           {children}
         </NuqsAdapter>

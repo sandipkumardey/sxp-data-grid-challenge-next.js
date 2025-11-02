@@ -32,7 +32,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Download, Search, Columns, FileText, FileSpreadsheet } from 'lucide-react';
+import { FileText, FileSpreadsheet, Download, Search, ClipboardList, Users, Award } from 'lucide-react';
 import { ColumnVisibility } from './ColumnVisibility';
 
 // Only using Community Edition modules
@@ -42,6 +42,38 @@ import { Application } from '../types/application';
 import { useGridState } from '../hooks/useGridState';
 import { loadApplications } from '../utils/loadData';
 
+
+// Stats component to show summary cards
+function StatsCard({ title, value, icon: Icon, trend, trendValue }: { 
+  title: string; 
+  value: string | number; 
+  icon: React.ElementType;
+  trend?: 'up' | 'down';
+  trendValue?: string;
+}) {
+  return (
+    <div className="rounded-xl border bg-card text-card-foreground shadow-sm">
+      <div className="p-6">
+        <div className="flex items-center justify-between">
+          <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
+            <Icon className="h-6 w-6 text-primary" />
+          </div>
+          {trend && (
+            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+              trend === 'up' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+            }`}>
+              {trend === 'up' ? '↑' : '↓'} {trendValue}
+            </span>
+          )}
+        </div>
+        <div className="mt-4">
+          <p className="text-sm font-medium text-muted-foreground">{title}</p>
+          <h3 className="mt-1 text-2xl font-semibold">{value}</h3>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function ApplicationsGrid() {
   const [applications, setApplications] = useState<Application[]>([]);
@@ -54,6 +86,30 @@ export function ApplicationsGrid() {
   
   // Destructure the state for easier access
   const { sortModel, filterModel, columnState, pagination, searchQuery } = gridState;
+
+  // Calculate stats
+  const stats = useMemo(() => {
+    if (!applications.length) return null;
+    
+    const totalApplications = applications.length;
+    const inReview = applications.filter(app => app.status === 'In Review').length;
+    const interviewStage = applications.filter(app => 
+      ['Phone Screen', 'Technical Interview', 'Onsite'].includes(app.status)
+    ).length;
+    const offerStage = applications.filter(app => 
+      ['Offer Received', 'Negotiating'].includes(app.status)
+    ).length;
+    
+    return {
+      total: totalApplications,
+      inReview,
+      interviewStage,
+      offerStage,
+      inReviewPercent: Math.round((inReview / totalApplications) * 100),
+      interviewPercent: Math.round((interviewStage / totalApplications) * 100),
+      offerPercent: Math.round((offerStage / totalApplications) * 100),
+    };
+  }, [applications]);
 
   // Load applications data
   useEffect(() => {
@@ -286,38 +342,75 @@ export function ApplicationsGrid() {
 
   // Handle export to Excel (CSV fallback for Community Edition)
   const handleExportExcel = useCallback(() => {
-    // In Community Edition, we'll use CSV as a fallback
+    // In Community Edition, we'll fall back to CSV
     handleExportCSV();
   }, [handleExportCSV]);
 
   if (loading) {
     return (
-      <div className="space-y-4 p-6">
-        <div className="flex items-center justify-between">
-          <Skeleton className="h-10 w-48" />
-          <div className="flex space-x-2">
-            <Skeleton className="h-10 w-32" />
-            <Skeleton className="h-10 w-64" />
-          </div>
-        </div>
-        <div className="space-y-2">
-          {[...Array(10)].map((_, i) => (
-            <Skeleton key={i} className="h-12 w-full" />
+      <div className="space-y-6 p-6">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-32 rounded-xl" />
           ))}
+        </div>
+        <div className="space-y-4">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <Skeleton className="h-10 w-48" />
+            <div className="flex space-x-2">
+              <Skeleton className="h-10 w-32" />
+              <Skeleton className="h-10 w-24" />
+            </div>
+          </div>
+          <Skeleton className="h-[600px] w-full rounded-lg" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="space-y-6">
+      {/* Stats Grid */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <StatsCard 
+          title="Total Applications" 
+          value={stats?.total || 0} 
+          icon={FileText} 
+          trend="up"
+          trendValue="12% from last month"
+        />
+        <StatsCard 
+          title="In Review" 
+          value={`${stats?.inReview || 0} (${stats?.inReviewPercent || 0}%)`} 
+          icon={ClipboardList} 
+          trend="up"
+          trendValue="5%"
+        />
+        <StatsCard 
+          title="Interview Stage" 
+          value={`${stats?.interviewStage || 0} (${stats?.interviewPercent || 0}%)`} 
+          icon={Users} 
+          trend="up"
+          trendValue="3%"
+        />
+        <StatsCard 
+          title="Offer Stage" 
+          value={`${stats?.offerStage || 0} (${stats?.offerPercent || 0}%)`} 
+          icon={Award} 
+          trend="down"
+          trendValue="2%"
+        />
+      </div>
+
+      {/* Main Grid */}
       <Card className="shadow-sm">
         <CardHeader className="pb-4">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
               <CardTitle className="text-2xl font-bold">Job Applications</CardTitle>
               <p className="text-sm text-muted-foreground">
-                {applications.length} applications found
+                Showing {applications.length} applications
+                {searchQuery ? ` matching "${searchQuery}"` : ''}
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
@@ -331,46 +424,58 @@ export function ApplicationsGrid() {
                   onChange={handleSearch}
                 />
               </div>
-              <div className="flex gap-2">
-                <ColumnVisibility 
-                  columnApi={columnApi}
-                  columnDefs={columnDefs}
-                  columnState={columnState || []}
-                  onColumnStateChange={(newState) => updateGridState({ columnState: newState })}
-                />
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm" className="gap-2">
-                      <Download className="h-4 w-4" />
-                      <span className="hidden sm:inline">Export</span>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={handleExportCSV}>
-                      <FileText className="mr-2 h-4 w-4" />
-                      <span>Export as CSV</span>
-                    </DropdownMenuItem>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div>
-                            <DropdownMenuItem 
-                              onClick={handleExportExcel}
-                              className="flex items-center"
-                              disabled
-                            >
-                              <FileSpreadsheet className="mr-2 h-4 w-4" />
-                              <span>Export as Excel (Enterprise)</span>
-                            </DropdownMenuItem>
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Excel export is available in AG Grid Enterprise Edition</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+              <div className="flex flex-wrap gap-2">
+                <div className="relative flex-1 sm:flex-none">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    type="search"
+                    placeholder="Search applications..."
+                    className="w-full pl-9 max-w-xs"
+                    value={searchQuery}
+                    onChange={handleSearch}
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <ColumnVisibility 
+                    columnApi={columnApi}
+                    columnDefs={columnDefs}
+                    columnState={columnState || []}
+                    onColumnStateChange={(newState) => updateGridState({ columnState: newState })}
+                  />
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm" className="gap-2">
+                        <Download className="h-4 w-4" />
+                        <span className="hidden sm:inline">Export</span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={handleExportCSV}>
+                        <FileText className="mr-2 h-4 w-4" />
+                        <span>Export as CSV</span>
+                      </DropdownMenuItem>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div>
+                              <DropdownMenuItem 
+                                onClick={handleExportExcel}
+                                className="flex items-center"
+                                disabled
+                              >
+                                <FileSpreadsheet className="mr-2 h-4 w-4" />
+                                <span>Export as Excel (Enterprise)</span>
+                              </DropdownMenuItem>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Excel export is available in AG Grid Enterprise Edition</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               </div>
             </div>
           </div>
