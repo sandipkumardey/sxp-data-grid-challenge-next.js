@@ -2,7 +2,18 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
-import type { ColDef, GridReadyEvent, GridApi, GridOptions } from '@ag-grid-community/core';
+import type { 
+  ColDef, 
+  GridReadyEvent, 
+  GridApi, 
+  GridOptions,
+  ColumnState,
+  SortModelItem,
+  Column
+} from '@ag-grid-community/core';
+
+// Type for AG Grid's ColumnApi
+type ColumnApi = any; // Using any as a fallback for ColumnApi
 import { ClientSideRowModelModule } from '@ag-grid-community/client-side-row-model';
 
 // Dynamically import AgGridReact with SSR disabled
@@ -19,41 +30,60 @@ import { Download, Search } from 'lucide-react';
 // Only using Community Edition modules
 const modules = [ClientSideRowModelModule];
 
-import { Application, GridState } from '../types/application';
-import { useUrlState } from '../hooks/useUrlState';
-import { loadApplications, extractUniqueSkills } from '../utils/loadData';
+import { Application } from '../types/application';
+import { useGridState } from '../hooks/useGridState';
+import { loadApplications } from '../utils/loadData';
 
 
 export function ApplicationsGrid() {
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
   const [gridApi, setGridApi] = useState<GridApi | null>(null);
-  // Column API is now part of the GridApi in newer versions
-  const [uniqueSkills, setUniqueSkills] = useState<string[]>([]);
+  const [columnApi, setColumnApi] = useState<ColumnApi | null>(null);
   
-  // Get URL state and setter
-  const [urlState, setUrlState] = useUrlState();
+  // Use the new useGridState hook
+  const [gridState, updateGridState] = useGridState();
   
   // Destructure the state for easier access
-  const { sortModel, filterModel, pagination, searchQuery } = urlState;
+  const { sortModel, filterModel, columnState, pagination, searchQuery } = gridState;
 
   // Load applications data
   useEffect(() => {
     const fetchData = async () => {
       try {
-        setLoading(true);
         const data = await loadApplications();
         setApplications(data);
-        setUniqueSkills(extractUniqueSkills(data));
+        setLoading(false);
+
+        // Apply initial grid state once data is loaded
+        if (gridApi && columnApi) {
+          if (sortModel && sortModel.length > 0) {
+            columnApi.applyColumnState({
+              state: sortModel.map(sort => ({
+                colId: sort.colId,
+                sort: sort.sort || null,
+              })),
+              applyOrder: true,
+            });
+          }
+          if (filterModel) {
+            gridApi.setFilterModel(filterModel);
+          }
+          if (columnState && columnState.length > 0) {
+            columnApi.applyColumnState({
+              state: columnState as any,
+              applyOrder: true,
+            });
+          }
+        }
       } catch (error) {
-        console.error('Failed to load applications:', error);
-      } finally {
+        console.error('Error loading applications:', error);
         setLoading(false);
       }
     };
 
     fetchData();
-  }, []);
+  }, [gridApi, columnApi, sortModel, filterModel, columnState]);
 
   // Define column definitions - Community Edition only
   const columnDefs = useMemo<ColDef[]>(() => [
@@ -68,23 +98,23 @@ export function ApplicationsGrid() {
       headerClass: 'font-medium',
       cellClass: 'font-mono text-sm',
     },
-    { 
-      field: 'email', 
+    {
+      field: 'email',
       headerName: 'Email',
       filter: 'agTextColumnFilter',
       width: 240,
       headerClass: 'font-medium',
       cellClass: 'text-ellipsis overflow-hidden',
     },
-    { 
-      field: 'location', 
+    {
+      field: 'location',
       headerName: 'Location',
       filter: 'agTextColumnFilter',
       width: 160,
       headerClass: 'font-medium',
     },
-    { 
-      field: 'overallExperience', 
+    {
+      field: 'overallExperience',
       headerName: 'Experience (Years)',
       filter: 'agNumberColumnFilter',
       width: 160,
@@ -92,161 +122,156 @@ export function ApplicationsGrid() {
       headerClass: 'font-medium',
       cellClass: 'text-right',
     },
-    { 
-      field: 'currentWorkType', 
+    {
+      field: 'currentWorkType',
       headerName: 'Current Work',
       filter: 'agTextColumnFilter',
       width: 140,
       headerClass: 'font-medium',
     },
-    { 
-      field: 'preferredWorkType', 
+    {
+      field: 'preferredWorkType',
       headerName: 'Preferred Work',
       filter: 'agTextColumnFilter',
       width: 140,
       headerClass: 'font-medium',
     },
-    { 
-      field: 'ctc', 
+    {
+      field: 'ctc',
       headerName: 'Current CTC (LPA)',
       filter: 'agNumberColumnFilter',
       width: 150,
       type: 'numericColumn',
       headerClass: 'font-medium',
       cellClass: 'text-right',
-      valueFormatter: (params: { value?: number | null }) => params.value !== undefined && params.value !== null ? `${params.value} LPA` : '',
+      valueFormatter: (params: { value?: number | null }) =>
+        params.value !== undefined && params.value !== null ? `${params.value} LPA` : '',
     },
-    { 
-      field: 'expectedCTC', 
+    {
+      field: 'expectedCTC',
       headerName: 'Expected CTC (LPA)',
       filter: 'agNumberColumnFilter',
       width: 150,
       type: 'numericColumn',
       headerClass: 'font-medium',
       cellClass: 'text-right',
-      valueFormatter: (params: { value?: number | null }) => params.value !== undefined && params.value !== null ? `${params.value} LPA` : '',
+      valueFormatter: (params: { value?: number | null }) =>
+        params.value !== undefined && params.value !== null ? `${params.value} LPA` : '',
     },
   ], []);
 
   // Grid ready event
   const onGridReady = useCallback((params: GridReadyEvent) => {
-    setGridApi(params.api);
-  }, []);
+    const { api, columnApi } = params as any; // Type assertion for columnApi
+    setGridApi(api);
+    setColumnApi(columnApi);
+    
+    if (!api || !columnApi) return;
+    
+    // Set up event listeners for grid state changes
+    const handleSortChanged = () => {
+      const columnStates = columnApi.getColumnState();
+      const newSortModel = columnStates
+        .filter((col: any) => col.sort)
+        .map((col: any) => ({
+          colId: col.colId || '',
+          sort: col.sort || null,
+        }));
+      updateGridState({ sortModel: newSortModel });
+    };
+    
+    const handleFilterChanged = () => {
+      const filterModel = api.getFilterModel();
+      updateGridState({ filterModel });
+    };
+    
+    const handleColumnStateChanged = () => {
+      const columnState = columnApi.getColumnState();
+      updateGridState({ columnState });
+    };
+    
+    api.addEventListener('sortChanged', handleSortChanged);
+    api.addEventListener('filterChanged', handleFilterChanged);
+    api.addEventListener('columnMoved', handleColumnStateChanged);
+    api.addEventListener('columnResized', handleColumnStateChanged);
+    
+    // Cleanup function
+    return () => {
+      api.removeEventListener('sortChanged', handleSortChanged);
+      api.removeEventListener('filterChanged', handleFilterChanged);
+      api.removeEventListener('columnMoved', handleColumnStateChanged);
+      api.removeEventListener('columnResized', handleColumnStateChanged);
+    };
+  }, [updateGridState]);
 
-  // Apply grid state when grid is ready
+  // Set initial search query from URL
   useEffect(() => {
-    if (!gridApi) return;
+    if (gridApi && !loading && searchQuery) {
+      const searchInput = document.querySelector('input[type="search"]') as HTMLInputElement;
+      if (searchInput) {
+        searchInput.value = searchQuery;
+        // Use filter instead of quickFilter
+        gridApi.setFilterModel({
+          ...(gridState?.filterModel || {}),
+          globalQuickFilter: searchQuery
+        });
+      }
+    }
+  }, [gridApi, loading, searchQuery, gridState?.filterModel]);
 
-    // Apply sort model
-    if (sortModel && sortModel.length > 0) {
-      gridApi.applyColumnState({
-        state: sortModel.map(sort => ({
-          colId: sort.colId,
-          sort: sort.sort || null,
-        })),
-        applyOrder: true,
+  // Handle search
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    if (gridApi) {
+      // Use filter instead of quickFilter which might not be available
+      gridApi.setFilterModel({
+        ...(gridState?.filterModel || {}),
+        ...(value ? { globalQuickFilter: value } : { globalQuickFilter: null })
       });
     }
-
-    // Apply filter model
-    if (filterModel) {
-      gridApi.setFilterModel(filterModel);
-    }
-
-    // Apply pagination
-    if (pagination) {
-      // Set pagination page size through grid options
-      gridApi.setGridOption('paginationPageSize', pagination.pageSize);
-      // Go to the specified page
-      gridApi.paginationGoToPage(pagination.currentPage);
-    }
-  }, [gridApi, sortModel, filterModel, pagination]);
-
-  // Handle grid state changes with proper types
-  const onSortChanged = useCallback(() => {
-    if (!gridApi) return;
-    const newSortModel = gridApi.getColumnState()
-      .filter(col => col.sort)
-      .map(col => ({
-        colId: col.colId || '',
-        sort: col.sort === 'asc' || col.sort === 'desc' ? col.sort : null
-      }));
-    
-    setUrlState(prev => ({
-      ...prev,
-      sortModel: newSortModel
-    }));
-  }, [gridApi, setUrlState]);
-
-  const onFilterChanged = useCallback(() => {
-    if (!gridApi) return;
-    const newFilterModel = gridApi.getFilterModel();
-    setUrlState(prev => ({
-      ...prev,
-      filterModel: newFilterModel
-    }));
-  }, [gridApi, setUrlState]);
-
-  const onColumnMoved = useCallback(() => {
-    if (!gridApi) return;
-    const columnState = gridApi.getColumnState();
-    setUrlState(prev => ({
-      ...prev,
-      columnState
-    }));
-  }, [gridApi, setUrlState]);
+    updateGridState({ searchQuery: value });
+  };
 
   const onPaginationChanged = useCallback(() => {
-    if (!gridApi) return;
-    const currentPage = gridApi.paginationGetCurrentPage() || 0;
-    const pageSize = gridApi.paginationGetPageSize();
-    setUrlState(prev => ({
-      ...prev,
-      pagination: { currentPage, pageSize }
-    }));
-  }, [gridApi, setUrlState]);
+    if (gridApi) {
+      const currentPage = gridApi.paginationGetCurrentPage();
+      const pageSize = gridApi.paginationGetPageSize();
+      updateGridState({
+        pagination: {
+          currentPage,
+          pageSize,
+        },
+      });
+    }
+  }, [gridApi, updateGridState]);
 
-  // Grid options - Community Edition only
-  const gridOptions: GridOptions = useMemo(() => ({
-    defaultColDef: {
-      filter: true,
-      sortable: true,
-      resizable: true,
-      flex: 1,
-      minWidth: 120,
-      menuTabs: ['filterMenuTab'],
-      filterParams: {
-        buttons: ['reset', 'apply'],
-        closeOnApply: true,
-      },
-      cellStyle: { display: 'flex', alignItems: 'center' },
-    },
-    pagination: true,
-    paginationPageSize: pagination?.pageSize || 20,
-    rowSelection: 'multiple',
-    suppressRowClickSelection: true,
-    suppressCellFocus: true,
-    suppressDragLeaveHidesColumns: true,
-    suppressMenuHide: true,
-    animateRows: true,
-    rowClass: 'hover:bg-muted/50',
-    onGridReady: (params) => {
-      setGridApi(params.api);
-    },
-    onSortChanged: onSortChanged,
-    onFilterChanged: onFilterChanged,
-    onPaginationChanged: onPaginationChanged,
-  }), [onSortChanged, onFilterChanged, onPaginationChanged, pagination?.pageSize]);
+  const gridOptions: GridOptions = useMemo(
+    () => ({
+      // ...
+    }),
+    [onGridReady, pagination?.pageSize, gridApi, updateGridState]
+  );
 
-  // CSV Export (Community Edition)
+  // Handle export to CSV
   const handleExportCSV = useCallback(() => {
-    if (!gridApi) return;
-    gridApi.exportDataAsCsv({
-      fileName: `applications_${new Date().toISOString().slice(0, 10)}.csv`,
-    });
+    if (gridApi) {
+      try {
+        gridApi.exportDataAsCsv({
+          fileName: `applications-${new Date().toISOString().split('T')[0]}.csv`,
+          processCellCallback: (params: any) => {
+            // Format date fields if needed
+            if (params.column?.getColDef()?.field === 'createdAt' && params.value) {
+              return new Date(params.value).toLocaleDateString();
+            }
+            return params.value;
+          },
+        });
+      } catch (error) {
+        console.error('Error exporting to CSV:', error);
+      }
+    }
   }, [gridApi]);
 
-  // Loading state
   if (loading) {
     return (
       <div className="space-y-4 p-6">
@@ -285,7 +310,7 @@ export function ApplicationsGrid() {
                   placeholder="Search applications..."
                   className="w-full pl-9"
                   value={searchQuery}
-                  onChange={(e) => setUrlState(prev => ({ ...prev, searchQuery: e.target.value }))}
+                  onChange={handleSearch}
                 />
               </div>
               <Button 
