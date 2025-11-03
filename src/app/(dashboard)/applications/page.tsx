@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useEffect, useTransition } from 'react';
 import dynamic from 'next/dynamic';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
@@ -57,15 +57,40 @@ export default function ApplicationsPage() {
   const [isPending, startTransition] = useTransition();
   const [isExporting, setIsExporting] = useState(false);
 
-  // Mock data for the data grid
-  const mockData = Array.from({ length: 8 }).map((_, i) => ({
-    id: `app-${i + 1}`,
-    company: `Company ${i + 1}`,
-    position: `Senior ${['Frontend', 'Backend', 'Full Stack', 'DevOps'][i % 4]} Developer`,
-    status: statusOptions[i % statusOptions.length],
-    date: new Date(Date.now() - i * 86400000).toISOString().split('T')[0],
-    location: ['Remote', 'Hybrid', 'On-site'][i % 3],
-  }));
+  // Import the sample applications data
+  const [applications, setApplications] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load the sample data on component mount
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const response = await fetch('/sample-applications.json');
+        const data = await response.json();
+        
+        // Transform the data to match our expected format
+        const formattedData = data.map((app: any, index: number) => ({
+          id: app.id,
+          name: app.name,
+          position: app.jobTitle || `Position ${index + 1}`,
+          status: app.applicationStatus || 'Applied',
+          date: app.createdAt || new Date().toISOString().split('T')[0],
+          location: app.location || 'Remote',
+          experience: app.overallExperience || '0',
+          noticePeriod: app.noticePeriod || '0',
+          skills: (app.skills || []).map((s: any) => s.name).join(', ')
+        }));
+        
+        setApplications(formattedData);
+      } catch (error) {
+        console.error('Error loading applications:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadData();
+  }, []);
 
   const toggleStatus = (status: string) => {
     setSelectedStatus(prev => 
@@ -92,14 +117,41 @@ export default function ApplicationsPage() {
     }, 1500);
   };
 
-  const filteredData = mockData.filter(row => {
+  const filteredData = applications.filter(row => {
     const matchesSearch = searchQuery === '' || 
-      Object.values(row).some(val => 
-        val.toString().toLowerCase().includes(searchQuery.toLowerCase())
-      );
+      Object.entries(row).some(([key, val]) => {
+        // Skip searching by id
+        if (key === 'id') return false;
+        // Handle potential null/undefined values
+        if (val == null) return false;
+        // Convert to string and search
+        return String(val).toLowerCase().includes(searchQuery.toLowerCase());
+      });
     const matchesStatus = selectedStatus.length === 0 || selectedStatus.includes(row.status);
     return matchesSearch && matchesStatus;
   });
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-32 rounded-xl" />
+          ))}
+        </div>
+        <div className="space-y-4">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <Skeleton className="h-10 w-48" />
+            <div className="flex space-x-2">
+              <Skeleton className="h-10 w-32" />
+              <Skeleton className="h-10 w-24" />
+            </div>
+          </div>
+          <Skeleton className="h-[600px] w-full rounded-lg" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
