@@ -103,7 +103,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         <div className="flex h-16 items-center justify-between border-b border-gray-200 px-6 dark:border-gray-800">
           <div className="flex items-center space-x-2">
             <LayoutGrid className="h-6 w-6 text-primary" />
-            <span className="text-lg font-semibold text-gray-900 dark:text-white">App Dashboard</span>
+            <span className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">Lynk</span>
           </div>
           <TooltipProvider>
             <Tooltip>

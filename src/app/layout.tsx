@@ -19,7 +19,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "JobTrack - Modern Job Application Dashboard",
+  title: "Lynk - Modern Job Application Dashboard",
   description: "A modern dashboard for managing job applications with advanced filtering, sorting, and analytics capabilities.",
   keywords: ["job search", "applications", "dashboard", "career", "hiring"],
   authors: [{ name: "Your Name" }],
