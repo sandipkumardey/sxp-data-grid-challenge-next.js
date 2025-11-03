@@ -89,7 +89,7 @@ function StatsCard({ title, value, icon: Icon, trend, trendValue, className }: {
             {title === 'In Review' && <span>⏳</span>}
             {title === 'Interview Stage' && <span>💬</span>}
             {title === 'Offer Stage' && <span>🎯</span>}
-            <p className="text-sm font-medium text-muted-foreground">{title}</p>
+            <CardTitle className="text-lg font-semibold tracking-tight">Your Application History</CardTitle>
           </div>
           <h3 className="mt-1 text-2xl font-semibold">{value}</h3>
           {/* Micro trendline */}
@@ -603,13 +603,13 @@ function ApplicationsGridClient() {
       {stats && (
         <div className="grid grid-cols-1 gap-4 mb-6 sm:grid-cols-2 lg:grid-cols-4">
           <StatsCard 
-            title="Total Applications" 
+            title="All Submissions" 
             value={stats.total} 
             icon={FileText} 
             className="shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm bg-card/80 border border-border/50 hover:scale-[1.02] dark:bg-[#262b34] dark:border-[#343a46] dark:shadow-inner"
           />
           <StatsCard 
-            title="High Match (80%+)" 
+            title="Active Applications" 
             value={`${stats.highMatchApplications} (${stats.matchPercent}%)`} 
             icon={Target}
             trend="up"
@@ -617,7 +617,7 @@ function ApplicationsGridClient() {
             className="shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm bg-card/80 border border-border/50 hover:scale-[1.02] dark:bg-[#262b34] dark:border-[#343a46] dark:shadow-inner"
           />
           <StatsCard 
-            title="Offers in Hand" 
+            title="Offers Received" 
             value={`${stats.applicationsWithOffers} (${stats.offersPercent}%)`} 
             icon={MessageCircle}
             trend="up"
@@ -625,7 +625,7 @@ function ApplicationsGridClient() {
             className="shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm bg-card/80 border border-border/50 hover:scale-[1.02] dark:bg-[#262b34] dark:border-[#343a46] dark:shadow-inner"
           />
           <StatsCard 
-            title="Willing to Relocate" 
+            title="Open to Relocate" 
             value={`${stats.willingToRelocate} (${stats.relocatePercent}%)`} 
             icon={Clock}
             trend="up"
@@ -641,7 +641,7 @@ function ApplicationsGridClient() {
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <Input
             type="text"
-            placeholder="Search by name, email, or location..."
+            placeholder="Find by company name, role, or location..."
             className="pl-9 w-full"
             value={searchQuery}
             onChange={handleSearch}

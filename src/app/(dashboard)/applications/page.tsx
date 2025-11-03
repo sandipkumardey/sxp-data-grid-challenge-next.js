@@ -133,7 +133,11 @@ export default function ApplicationsPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-6" role="status" aria-live="polite">
+        <div className="flex items-center justify-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <span className="ml-2 text-muted-foreground">Loading your applications...</span>
+        </div>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {[1, 2, 3, 4].map((i) => (
             <Skeleton key={i} className="h-32 rounded-xl" />
@@ -162,7 +166,7 @@ export default function ApplicationsPage() {
             JOB APPLICATIONS
           </h1>
           <p className="text-muted-foreground">
-            View and manage job applications with filtering, sorting, and export capabilities
+            Track your progress and manage applications efficiently with advanced filtering and search
           </p>
         </div>
         <TooltipProvider>
@@ -197,14 +201,18 @@ export default function ApplicationsPage() {
         <CardContent className="p-4">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="relative w-full md:max-w-sm">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
               <Input
-                placeholder="Search applications..."
+                placeholder="Find by company name, role, or location..."
                 className="pl-10 font-mono text-sm"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                aria-label="Search applications"
+                aria-label="Search applications by company, role, or location"
+                aria-describedby="search-help"
               />
+              <div id="search-help" className="sr-only">
+                Search across all application fields to find specific entries
+              </div>
             </div>
             <div className="flex items-center gap-2">
               <TooltipProvider>
@@ -368,7 +376,7 @@ export default function ApplicationsPage() {
       <Card className="overflow-hidden">
         <CardHeader className="border-b">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-lg font-semibold tracking-tight">Overview</CardTitle>
+            <CardTitle className="text-lg font-semibold tracking-tight">Your Application History</CardTitle>
             <div className="text-sm text-muted-foreground">
               Showing <span className="font-medium">1-{filteredData.length}</span> of{' '}
               <span className="font-medium">{filteredData.length}</span> applications
@@ -441,9 +449,9 @@ export default function ApplicationsPage() {
               </div>
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="flex flex-col items-center justify-center py-16 text-center" role="status" aria-live="polite">
               <div className="rounded-full bg-muted p-4 mb-4">
-                <Search className="h-8 w-8 text-muted-foreground" />
+                <Search className="h-8 w-8 text-muted-foreground" aria-hidden="true" />
               </div>
               <h3 className="text-lg font-medium mb-1">No applications found</h3>
               <p className="text-muted-foreground max-w-md px-4">
@@ -452,7 +460,11 @@ export default function ApplicationsPage() {
                   : "Get started by adding your first job application"}
               </p>
               {(!searchQuery && selectedStatus.length === 0) && (
-                <Button className="mt-4">
+                <Button 
+                  className="mt-4" 
+                  onClick={() => {/* Handle add application */}}
+                  aria-label="Add your first job application"
+                >
                   <Plus className="mr-2 h-4 w-4" />
                   Add Application
                 </Button>
@@ -463,20 +475,35 @@ export default function ApplicationsPage() {
         
         {/* Bulk Actions Bar */}
         {selectedRows.length > 0 && (
-          <div className="border-t bg-muted/20 px-6 py-3 flex items-center justify-between">
+          <div className="border-t bg-muted/20 px-6 py-3 flex items-center justify-between" role="region" aria-label="Bulk actions">
             <div className="text-sm text-muted-foreground">
-              <span className="font-medium">{selectedRows.length}</span> selected
+              <span className="font-medium">{selectedRows.length}</span> application{selectedRows.length !== 1 ? 's' : ''} selected
             </div>
             <div className="flex items-center space-x-2">
-              <Button variant="outline" size="sm" className="gap-1">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="gap-1"
+                aria-label={`Update status for ${selectedRows.length} selected applications`}
+              >
                 <Check className="h-4 w-4" />
                 <span>Update Status</span>
               </Button>
-              <Button variant="outline" size="sm" className="gap-1">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="gap-1"
+                aria-label={`Add ${selectedRows.length} selected applications to list`}
+              >
                 <ListPlus className="h-4 w-4" />
                 <span>Add to List</span>
               </Button>
-              <Button variant="outline" size="sm" className="gap-1 text-destructive hover:bg-destructive/10 hover:text-destructive">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="gap-1 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                aria-label={`Delete ${selectedRows.length} selected applications`}
+              >
                 <Trash2 className="h-4 w-4" />
                 <span>Delete Selected</span>
               </Button>

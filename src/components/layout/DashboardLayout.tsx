@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { 
   Menu, X, Settings, Home, BarChart2, Users, FileText, 
-  Search, Filter, LayoutGrid, ChevronDown, ChevronRight, 
+  Filter, LayoutGrid, ChevronDown, ChevronRight, 
   Plus, MoreVertical, Bell, HelpCircle, AlertCircle, CheckCircle2, Clock, AlertTriangle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,6 @@ import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useTheme } from 'next-themes';
@@ -212,26 +211,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                   </TooltipProvider>
                 );
               })}
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button
-                      onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                      className="group flex w-full items-center justify-center rounded-lg p-2.5 text-sm font-medium text-gray-700 transition-all duration-200 hover:bg-gray-100 hover:scale-105 dark:text-gray-300 dark:hover:bg-gray-800"
-                      aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-                    >
-                      {theme === 'dark' ? (
-                        <Sun className="h-5 w-5 text-yellow-400 transition-transform duration-200 group-hover:rotate-12" />
-                      ) : (
-                        <Moon className="h-5 w-5 text-gray-600 transition-transform duration-200 group-hover:-rotate-12 dark:text-gray-400" />
-                      )}
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent side="right">
-                    <p>{theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
             </nav>
           </div>
         </div>
@@ -264,20 +243,34 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           </div>
           
           <div className="flex items-center space-x-3">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-              <Input
-                type="text"
-                placeholder="Search..."
-                className="w-full rounded-full pl-9 md:w-64"
-              />
-            </div>
-            
             <Button variant="ghost" size="icon" className="text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700/50">
               <Bell className="h-5 w-5" />
               <span className="sr-only">Notifications</span>
               <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-red-500" />
             </Button>
+            
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                    className="text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700/50"
+                    aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+                  >
+                    {theme === 'dark' ? (
+                      <Sun className="h-5 w-5 text-yellow-400 transition-transform duration-200 hover:rotate-12" />
+                    ) : (
+                      <Moon className="h-5 w-5 text-gray-600 transition-transform duration-200 hover:-rotate-12 dark:text-gray-400" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
             
             <div className="hidden h-8 w-px bg-gray-200 dark:bg-gray-700 md:block" />
             
@@ -300,26 +293,28 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             <div className="mb-6 flex flex-col justify-between md:flex-row md:items-center">
               <div>
                 <h2 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
-                  {activeNav === 'applications' ? 'Job Applications' : 'Dashboard Overview'}
+                  {activeNav === 'applications' ? '' : 'Dashboard Overview'}
                 </h2>
                 <p className="text-sm text-muted-foreground font-normal">
                   {activeNav === 'applications' 
-                    ? 'Manage and track your job applications' 
+                    ? '' 
                     : 'Get an overview of your job search progress'}
                 </p>
               </div>
               
-              <div className="mt-4 flex items-center space-x-2 md:mt-0">
-                <Button variant="outline" size="sm" className="gap-2">
-                  <Filter className="h-4 w-4" />
-                  <span>Filter</span>
-                </Button>
-                <Button variant="outline" size="sm" className="gap-2">
-                  <LayoutGrid className="h-4 w-4" />
-                  <span>View</span>
-                  <ChevronDown className="h-4 w-4" />
-                </Button>
-              </div>
+              {activeNav !== 'applications' && (
+                <div className="mt-4 flex items-center space-x-2 md:mt-0">
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <Filter className="h-4 w-4" />
+                    <span>Filter</span>
+                  </Button>
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <LayoutGrid className="h-4 w-4" />
+                    <span>View</span>
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
             </div>
 
             {/* Main Content */}
