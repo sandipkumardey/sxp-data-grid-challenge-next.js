@@ -1,0 +1,11 @@
+**/*.js
+**/*.json
+**/*.d.ts
+.next/
+node_modules/
+build/
+coverage/
+*.css
+*.scss
+*.md
+*.mdx
