@@ -7,23 +7,23 @@
 @layer base {
   :root {
 
-    --background: 47 100% 92%;
+    --background: 0 0% 98%;
 
     --foreground: 226 18% 23%;
 
-    --card: 47 100% 92%;
+    --card: 0 0% 98%;
 
     --card-foreground: 226 18% 23%;
 
-    --popover: 47 100% 92%;
+    --popover: 0 0% 98%;
 
     --popover-foreground: 226 18% 23%;
 
-    --primary: 202 19% 33%;
+    --primary: 78 20% 60%;
 
     --primary-foreground: 47 100% 92%;
 
-    --secondary: 78 20% 60%;
+    --secondary: 202 19% 33%;
 
     --secondary-foreground: 47 100% 92%;
 
@@ -31,9 +31,9 @@
 
     --muted-foreground: 226 15% 35%;
 
-    --accent: 226 18% 23%;
+    --accent: 217 91% 60%;
 
-    --accent-foreground: 47 100% 92%;
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84.2% 60.2%;
 
@@ -59,7 +59,7 @@
   }
   .dark {
 
-    --background: 226 18% 23%;
+    --background: 226 15% 12%;
 
     --foreground: 47 100% 92%;
 
@@ -117,5 +117,26 @@
   }
   body {
     @apply bg-background text-foreground;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  /* Smooth transitions for all UI elements during theme switch */
+  .transition-theme * {
+    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease !important;
+  }
+
+  /* Button transitions */
+  button {
+    transition: all 0.2s ease;
+  }
+
+  /* Input transitions */
+  input, textarea, select {
+    transition: all 0.2s ease;
+  }
+
+  /* Card transitions */
+  [class*="card"] {
+    transition: all 0.3s ease;
   }
 }

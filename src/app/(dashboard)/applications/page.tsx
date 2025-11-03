@@ -368,7 +368,7 @@ export default function ApplicationsPage() {
       <Card className="overflow-hidden">
         <CardHeader className="border-b">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-lg font-mono">APPLICATIONS</CardTitle>
+            <CardTitle className="text-lg font-semibold tracking-tight">Overview</CardTitle>
             <div className="text-sm text-muted-foreground">
               Showing <span className="font-medium">1-{filteredData.length}</span> of{' '}
               <span className="font-medium">{filteredData.length}</span> applications
@@ -403,7 +403,7 @@ export default function ApplicationsPage() {
                   <div 
                     key={row.id}
                     className={cn(
-                      "grid grid-cols-12 gap-4 px-6 py-4 items-center hover:bg-muted/10 transition-colors",
+                      "grid grid-cols-12 gap-4 px-6 py-3 items-center hover:bg-muted/10 transition-colors",
                       selectedRows.includes(row.id) && "bg-primary/5"
                     )}
                   >

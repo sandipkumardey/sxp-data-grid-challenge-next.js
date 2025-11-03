@@ -46,7 +46,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { FileText, FileSpreadsheet, Download, Search, ClipboardList, Users, Award, Plus } from 'lucide-react';
+import { FileText, Clock, MessageCircle, Target } from 'lucide-react';
 import { ColumnVisibility } from './ColumnVisibility';
 
 // Define the modules used by AG Grid (Community Edition only)
@@ -58,15 +58,16 @@ import { loadApplications } from '../utils/loadData';
 
 
 // Stats component to show summary cards
-function StatsCard({ title, value, icon: Icon, trend, trendValue }: { 
+function StatsCard({ title, value, icon: Icon, trend, trendValue, className }: { 
   title: string; 
   value: string | number; 
-  icon: React.ElementType;
-  trend?: 'up' | 'down';
+  icon: React.ComponentType<{ className?: string }>; 
+  trend?: 'up' | 'down'; 
   trendValue?: string;
+  className?: string;
 }) {
   return (
-    <div className="rounded-xl border bg-card text-card-foreground shadow-sm">
+    <div className={cn("rounded-xl border bg-card text-card-foreground shadow-sm", className)}>
       <div className="p-6">
         <div className="flex items-center justify-between">
           <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
@@ -81,8 +82,23 @@ function StatsCard({ title, value, icon: Icon, trend, trendValue }: {
           )}
         </div>
         <div className="mt-4">
-          <p className="text-sm font-medium text-muted-foreground">{title}</p>
+          <div className="flex items-center gap-2">
+            {title === 'Total Applications' && <span>📄</span>}
+            {title === 'In Review' && <span>⏳</span>}
+            {title === 'Interview Stage' && <span>💬</span>}
+            {title === 'Offer Stage' && <span>🎯</span>}
+            <p className="text-sm font-medium text-muted-foreground">{title}</p>
+          </div>
           <h3 className="mt-1 text-2xl font-semibold">{value}</h3>
+          {/* Micro trendline */}
+          <div className="mt-2 flex items-end gap-1">
+            <div className="h-1 flex-1 bg-muted rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-primary rounded-full transition-all duration-500 ease-out"
+                style={{ width: title === 'Total Applications' ? '100%' : title === 'In Review' ? '65%' : title === 'Interview Stage' ? '25%' : '10%' }}
+              ></div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -178,47 +194,53 @@ export function ApplicationsGrid() {
     },
     {
       field: 'email',
-      headerName: 'Email',
+      headerName: 'Email ↕',
       filter: 'agTextColumnFilter',
       width: 240,
+      sortable: true,
       headerClass: 'font-medium',
       cellClass: 'text-ellipsis overflow-hidden',
     },
     {
       field: 'location',
-      headerName: 'Location',
+      headerName: 'Location ↕',
       filter: 'agTextColumnFilter',
       width: 160,
+      sortable: true,
       headerClass: 'font-medium',
     },
     {
       field: 'overallExperience',
-      headerName: 'Experience (Years)',
+      headerName: 'Experience ↕',
       filter: 'agNumberColumnFilter',
       width: 160,
+      sortable: true,
       type: 'numericColumn',
       headerClass: 'font-medium',
       cellClass: 'text-right',
     },
     {
       field: 'currentWorkType',
-      headerName: 'Current Work',
+      headerName: 'Current Work ↕',
       filter: 'agTextColumnFilter',
       width: 140,
+      sortable: true,
       headerClass: 'font-medium',
     },
     {
       field: 'preferredWorkType',
-      headerName: 'Preferred Work',
+      headerName: 'Preferred Work ↕',
       filter: 'agTextColumnFilter',
       width: 140,
+      sortable: true,
       headerClass: 'font-medium',
     },
     {
       field: 'ctc',
-      headerName: 'Current CTC (LPA)',
+      headerName: 'Current CTC ↕',
       filter: 'agNumberColumnFilter',
       width: 150,
+      sortable: true,
       type: 'numericColumn',
       headerClass: 'font-medium',
       cellClass: 'text-right',
@@ -227,9 +249,10 @@ export function ApplicationsGrid() {
     },
     {
       field: 'expectedCTC',
-      headerName: 'Expected CTC (LPA)',
+      headerName: 'Expected CTC ↕',
       filter: 'agNumberColumnFilter',
       width: 150,
+      sortable: true,
       type: 'numericColumn',
       headerClass: 'font-medium',
       cellClass: 'text-right',
@@ -471,31 +494,31 @@ export function ApplicationsGrid() {
             title="Total Applications" 
             value={stats.total} 
             icon={FileText} 
-            className="shadow-lg hover:shadow-xl transition-shadow duration-300 backdrop-blur-sm bg-card/80 border border-border/50"
+            className="shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm bg-card/80 border border-border/50 hover:scale-[1.02] dark:bg-[#262b34] dark:border-[#343a46] dark:shadow-inner"
           />
           <StatsCard 
             title="In Review" 
             value={`${stats.inReview} (${stats.inReviewPercent}%)`} 
-            icon={ClipboardList}
+            icon={Clock}
             trend="up"
             trendValue="12%"
-            className="shadow-lg hover:shadow-xl transition-shadow duration-300 backdrop-blur-sm bg-card/80 border border-border/50"
+            className="shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm bg-card/80 border border-border/50 hover:scale-[1.02] dark:bg-[#262b34] dark:border-[#343a46] dark:shadow-inner"
           />
           <StatsCard 
             title="Interview Stage" 
             value={`${stats.interviewStage} (${stats.interviewPercent}%)`} 
-            icon={Users}
+            icon={MessageCircle}
             trend="up"
             trendValue="5%"
-            className="shadow-lg hover:shadow-xl transition-shadow duration-300 backdrop-blur-sm bg-card/80 border border-border/50"
+            className="shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm bg-card/80 border border-border/50 hover:scale-[1.02] dark:bg-[#262b34] dark:border-[#343a46] dark:shadow-inner"
           />
           <StatsCard 
             title="Offer Stage" 
             value={`${stats.offerStage} (${stats.offerPercent}%)`} 
-            icon={Award}
+            icon={Target}
             trend="up"
             trendValue="3%"
-            className="shadow-lg hover:shadow-xl transition-shadow duration-300 backdrop-blur-sm bg-card/80 border border-border/50"
+            className="shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm bg-card/80 border border-border/50 hover:scale-[1.02] dark:bg-[#262b34] dark:border-[#343a46] dark:shadow-inner"
           />
         </div>
       )}
@@ -541,7 +564,7 @@ export function ApplicationsGrid() {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <Button size="sm" className="gap-2">
+          <Button size="sm" className="gap-2 shadow-sm hover:shadow-md transition-all duration-200 hover:scale-[1.02]">
             <Plus className="h-4 w-4" />
             <span>Add Application</span>
           </Button>

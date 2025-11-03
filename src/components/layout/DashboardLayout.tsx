@@ -87,14 +87,15 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   }
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-screen bg-background transition-theme">
       {/* Sidebar */}
       <div
         className={cn(
-          'fixed inset-y-0 left-0 z-30 w-64 transform border-r transition-all duration-300 ease-in-out',
-          !sidebarOpen && '-translate-x-full',
+          'group fixed inset-y-0 left-0 z-30 transform border-r transition-all duration-300 ease-in-out lg:hover:w-72',
+          !sidebarOpen && 'lg:w-16 lg:hover:w-64',
+          sidebarOpen && 'w-64',
           'lg:relative lg:translate-x-0',
-          sidebarOpen ? 'border-border bg-background/95 backdrop-blur-md shadow-xl' : 'border-transparent'
+          sidebarOpen ? 'border-border bg-foreground/10 backdrop-blur-md shadow-xl' : 'border-transparent'
         )}
         role="navigation"
         aria-label="Main navigation"
@@ -135,7 +136,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                         className={cn(
                           'group flex items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
                           isActive
-                            ? 'bg-primary text-primary-foreground shadow-md border border-primary/20 dark:bg-primary/90 dark:text-primary-foreground dark:shadow-lg dark:border-primary/30'
+                            ? 'bg-primary text-primary-foreground shadow-md border border-primary/20 dark:bg-primary/90 dark:text-primary-foreground dark:shadow-lg dark:border-primary/30 relative before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-1 before:h-6 before:bg-accent before:rounded-r-full'
                             : 'text-gray-700 hover:bg-gray-100 hover:shadow-sm dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:shadow-sm',
                         )}
                         aria-current={isActive ? 'page' : undefined}
@@ -216,19 +217,13 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                   <TooltipTrigger asChild>
                     <button
                       onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                      className="group flex w-full items-center rounded-lg px-3 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+                      className="group flex w-full items-center justify-center rounded-lg p-2.5 text-sm font-medium text-gray-700 transition-all duration-200 hover:bg-gray-100 hover:scale-105 dark:text-gray-300 dark:hover:bg-gray-800"
                       aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
                     >
                       {theme === 'dark' ? (
-                        <>
-                          <Sun className="mr-3 h-5 w-5 text-yellow-400" />
-                          <span>Light Mode</span>
-                        </>
+                        <Sun className="h-5 w-5 text-yellow-400 transition-transform duration-200 group-hover:rotate-12" />
                       ) : (
-                        <>
-                          <Moon className="mr-3 h-5 w-5 text-gray-600 dark:text-gray-400" />
-                          <span>Dark Mode</span>
-                        </>
+                        <Moon className="h-5 w-5 text-gray-600 transition-transform duration-200 group-hover:-rotate-12 dark:text-gray-400" />
                       )}
                     </button>
                   </TooltipTrigger>
@@ -258,7 +253,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             </Button>
             
             <div className="hidden items-center md:flex">
-              <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
+              <h1 className="text-lg font-semibold text-gray-900 dark:text-white mt-2">
                 {navItems.find((item) => item.id === activeNav)?.name || 'Dashboard'}
               </h1>
               <ChevronRight className="mx-2 h-4 w-4 text-gray-400" />
@@ -307,7 +302,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 <h2 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
                   {activeNav === 'applications' ? 'Job Applications' : 'Dashboard Overview'}
                 </h2>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground font-normal">
                   {activeNav === 'applications' 
                     ? 'Manage and track your job applications' 
                     : 'Get an overview of your job search progress'}
@@ -323,10 +318,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                   <LayoutGrid className="h-4 w-4" />
                   <span>View</span>
                   <ChevronDown className="h-4 w-4" />
-                </Button>
-                <Button size="sm" className="gap-2">
-                  <Plus className="h-4 w-4" />
-                  <span>Add Application</span>
                 </Button>
               </div>
             </div>

@@ -2,18 +2,18 @@
 .ag-theme-custom {
   font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   --ag-foreground-color: hsl(226 18% 23%);
-  --ag-background-color: hsl(47 100% 92%);
+  --ag-background-color: hsl(0 0% 98%);
   --ag-header-background-color: hsl(78 25% 85%);
-  --ag-odd-row-background-color: hsl(78 25% 88%);
+  --ag-odd-row-background-color: hsl(78 25% 90%);
   --ag-row-hover-color: hsl(78 20% 75%);
-  --ag-selected-row-background-color: hsl(202 19% 85%);
+  --ag-selected-row-background-color: hsl(217 91% 95%);
   --ag-border-color: hsl(78 20% 75%);
   --ag-header-foreground-color: hsl(226 18% 23%);
   --ag-secondary-foreground-color: hsl(226 15% 35%);
   --ag-disabled-foreground-color: hsl(78 15% 50%);
   --ag-input-disabled-background-color: hsl(78 25% 85%);
-  --ag-input-focus-border-color: hsl(226 18% 23%);
-  --ag-range-selection-border-color: hsl(226 18% 23%);
+  --ag-input-focus-border-color: hsl(217 91% 60%);
+  --ag-range-selection-border-color: hsl(217 91% 60%);
   --ag-row-border-color: hsl(78 20% 75%);
   --ag-header-cell-hover-background-color: hsl(78 20% 75%);
   --ag-header-cell-moving-background-color: hsl(78 20% 75%);
@@ -53,6 +53,12 @@
   letter-spacing: 0.05em;
 }
 
+/* Striped row styling */
+.ag-theme-custom .ag-row:nth-child(even) {
+  background-color: var(--ag-odd-row-background-color);
+}
+
+/* Enhanced row hover effects */
 .ag-theme-custom .ag-row {
   transition: all 0.2s ease-in-out;
   border-radius: 0.375rem;
@@ -89,49 +95,62 @@
   background-color: var(--ag-header-background-color);
 }
 
-/* Status badges */
+/* Status badges with enhanced color coding */
 .status-badge {
-  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium transition-all duration-200;
 }
 
+.status-badge:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.status-badge.applied,
 .status-badge.in-review {
-  background-color: hsl(202 19% 85%);
-  color: hsl(202 19% 33%);
+  background-color: hsl(217 91% 95%);
+  color: hsl(217 91% 40%);
 }
 
-.status-badge.interview {
-  background-color: hsl(78 20% 80%);
-  color: hsl(78 20% 35%);
+.status-badge.interview,
+.status-badge.technical-interview,
+.status-badge.onsite {
+  background-color: hsl(45 100% 95%);
+  color: hsl(45 100% 30%);
 }
 
-.status-badge.offer {
-  background-color: hsl(202 19% 85%);
-  color: hsl(202 19% 33%);
+.status-badge.offer,
+.status-badge.accepted {
+  background-color: hsl(142 76% 95%);
+  color: hsl(142 76% 30%);
 }
 
 .status-badge.rejected {
-  background-color: hsl(0 84.2% 85%);
-  color: hsl(0 84.2% 40%);
+  background-color: hsl(0 84% 95%);
+  color: hsl(0 84% 40%);
 }
 
+.dark .status-badge.applied,
 .dark .status-badge.in-review {
-  background-color: hsl(202 19% 20%);
-  color: hsl(202 19% 70%);
+  background-color: hsl(217 91% 15%);
+  color: hsl(217 91% 70%);
 }
 
-.dark .status-badge.interview {
-  background-color: hsl(78 20% 25%);
-  color: hsl(78 20% 75%);
+.dark .status-badge.interview,
+.dark .status-badge.technical-interview,
+.dark .status-badge.onsite {
+  background-color: hsl(45 100% 15%);
+  color: hsl(45 100% 70%);
 }
 
-.dark .status-badge.offer {
-  background-color: hsl(202 19% 20%);
-  color: hsl(202 19% 70%);
+.dark .status-badge.offer,
+.dark .status-badge.accepted {
+  background-color: hsl(142 76% 15%);
+  color: hsl(142 76% 70%);
 }
 
 .dark .status-badge.rejected {
-  background-color: hsl(0 62.8% 20%);
-  color: hsl(0 62.8% 70%);
+  background-color: hsl(0 84% 15%);
+  color: hsl(0 84% 70%);
 }
 
 /* Action buttons */
@@ -186,4 +205,36 @@
 
 .dark .custom-no-rows-overlay {
   color: hsl(78 15% 70%);
+}
+
+/* Dropdown animations */
+.ag-theme-custom .ag-menu {
+  animation: ag-menu-fade-in 0.2s ease-out;
+}
+
+@keyframes ag-menu-fade-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Filter panel animations */
+.ag-theme-custom .ag-filter-toolpanel {
+  animation: ag-filter-panel-slide-in 0.3s ease-out;
+}
+
+@keyframes ag-filter-panel-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
