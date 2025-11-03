@@ -5,12 +5,13 @@ import dynamic from 'next/dynamic';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Filter, Plus, Download, RefreshCw, Settings, X, Check, ListPlus, Trash2 } from 'lucide-react';
+import { Search, Filter, Plus, Download, RefreshCw, Settings, X, Check, ListPlus, Trash2, FileSpreadsheet, FileText } from 'lucide-react';
 import { MetricCard } from '@/components/ui/metric-card';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { DataGridSkeleton } from '@/components/ui/data-grid-skeleton';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import * as XLSX from 'xlsx';
 
 // Dynamically import the ApplicationsGrid component with SSR disabled
 const ApplicationsGrid = dynamic(
@@ -54,12 +55,23 @@ export default function ApplicationsPage() {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<string[]>([]);
   const [selectedRows, setSelectedRows] = useState<string[]>([]);
+  const [isExportDropdownOpen, setIsExportDropdownOpen] = useState(false);
+  const [isPreparingExport, setIsPreparingExport] = useState(false);
+  const [isExportInProgress, setIsExportInProgress] = useState(false);
+  const [exportType, setExportType] = useState<'csv' | 'excel' | null>(null);
   const [isPending, startTransition] = useTransition();
-  const [isExporting, setIsExporting] = useState(false);
 
   // Import the sample applications data
   const [applications, setApplications] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Auto-close dropdown after export completes
+  useEffect(() => {
+    if (!isExportInProgress && exportType === null) {
+      setIsExportDropdownOpen(false);
+      setIsPreparingExport(false);
+    }
+  }, [isExportInProgress, exportType]);
 
   // Load the sample data on component mount
   useEffect(() => {
@@ -109,9 +121,9 @@ export default function ApplicationsPage() {
     );
   };
 
-  const handleExport = async () => {
+  const handleExportCSV = async () => {
     // Determine which data to export: selected rows or all filtered data
-    const dataToExport = selectedRows.length > 0 
+    const dataToExport = selectedRows.length > 0
       ? filteredData.filter(row => selectedRows.includes(row.id))
       : filteredData;
 
@@ -120,7 +132,6 @@ export default function ApplicationsPage() {
       return;
     }
 
-    setIsExporting(true);
     try {
       // Create CSV content from selected/filtered data
       const headers = ['ID', 'Name', 'Company', 'Position', 'Status', 'Date', 'Location', 'Experience', 'Notice Period', 'Skills'];
@@ -152,9 +163,65 @@ export default function ApplicationsPage() {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
     } catch (error) {
-      console.error('Export failed:', error);
+      console.error('CSV export failed:', error);
+    }
+  };
+
+  const handleExportClick = () => {
+    if (filteredData.length === 0) {
+      console.warn('No data to export');
+      return;
+    }
+    setIsPreparingExport(true);
+    setIsExportDropdownOpen(true);
+  };
+
+  const handleExport = async (type: 'csv' | 'excel') => {
+    setExportType(type);
+    setIsExportInProgress(true);
+    setIsPreparingExport(false);
+
+    try {
+      if (type === 'csv') {
+        await handleExportCSV();
+      } else {
+        await handleExportExcel();
+      }
     } finally {
-      setIsExporting(false);
+      setIsExportInProgress(false);
+      setExportType(null);
+    }
+  };
+
+  const handleExportExcel = async () => {
+    // Determine which data to export: selected rows or all filtered data
+    const dataToExport = selectedRows.length > 0
+      ? filteredData.filter(row => selectedRows.includes(row.id))
+      : filteredData;
+
+    if (dataToExport.length === 0) {
+      console.warn('No data to export');
+      return;
+    }
+
+    try {
+      // Create workbook and worksheet
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(dataToExport);
+
+      // Auto-size columns
+      const colWidths = Object.keys(dataToExport[0]).map(header => ({
+        wch: Math.max(header.length, 12) // Minimum width of 12 characters
+      }));
+      ws['!cols'] = colWidths;
+
+      // Add worksheet to workbook
+      XLSX.utils.book_append_sheet(wb, ws, 'Applications');
+
+      // Generate and download the file
+      XLSX.writeFile(wb, `applications-${new Date().toISOString().split('T')[0]}.xlsx`);
+    } catch (error) {
+      console.error('Excel export failed:', error);
     }
   };
 
@@ -279,24 +346,55 @@ export default function ApplicationsPage() {
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={handleExport}
-                      disabled={isExporting}
-                    >
-                      {isExporting ? (
-                        <>
-                          <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                          <span>Exporting...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Download className="mr-2 h-4 w-4" />
-                          <span>Export</span>
-                        </>
-                      )}
-                    </Button>
+                    <DropdownMenu open={isExportDropdownOpen} onOpenChange={setIsExportDropdownOpen}>
+                      <DropdownMenuTrigger asChild>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="gap-2"
+                          disabled={isExportInProgress}
+                          onClick={handleExportClick}
+                        >
+                          {isExportInProgress ? (
+                            <>
+                              <RefreshCw className="h-4 w-4 animate-spin" />
+                              <span>Exporting {exportType?.toUpperCase()}...</span>
+                            </>
+                          ) : isPreparingExport ? (
+                            <>
+                              <RefreshCw className="h-4 w-4 animate-spin" />
+                              <span>Preparing export...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Download className="h-4 w-4" />
+                              <span>Export</span>
+                            </>
+                          )}
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" onInteractOutside={() => {
+                        if (!isExportInProgress) {
+                          setIsExportDropdownOpen(false);
+                          setIsPreparingExport(false);
+                        }
+                      }}>
+                        <DropdownMenuItem 
+                          onClick={() => handleExport('csv')} 
+                          disabled={isExportInProgress || isPreparingExport}
+                        >
+                          <FileText className="mr-2 h-4 w-4" />
+                          <span>Export as CSV</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={() => handleExport('excel')} 
+                          disabled={isExportInProgress || isPreparingExport}
+                        >
+                          <FileSpreadsheet className="mr-2 h-4 w-4" />
+                          <span>Export as Excel</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </TooltipTrigger>
                   <TooltipContent side="bottom">
                     <p>Export applications data</p>
