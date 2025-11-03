@@ -57,6 +57,7 @@ import { Application, Skill } from '../types/application';
 import { useGridUrlState } from '../hooks/useGridUrlState';
 import { ColumnVisibility } from './ColumnVisibility';
 import { loadApplications } from '../utils/loadData';
+import { exportToCSV, exportToExcel, exportToPDF, getExportStats } from '../utils/exportUtils';
 
 
 // Stats component to show summary cards
@@ -111,6 +112,7 @@ function StatsCard({ title, value, icon: Icon, trend, trendValue, className }: {
 function ApplicationsGridClient() {
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
+  const [exportLoading, setExportLoading] = useState(false);
   const [gridApi, setGridApi] = useState<GridApi | null>(null);
   const [columnApi, setColumnApi] = useState<ColumnApi | null>(null);
   
@@ -547,33 +549,75 @@ function ApplicationsGridClient() {
 
   // Handle export to CSV
   const handleExportCSV = useCallback(() => {
-    if (gridApi) {
-      try {
-        gridApi.exportDataAsCsv({
-          fileName: `applications-${new Date().toISOString().split('T')[0]}.csv`,
-          processCellCallback: (params: any) => {
-            // Format date fields if needed
-            if (params.column?.getColDef()?.field === 'createdAt' && params.value) {
-              return new Date(params.value).toLocaleDateString();
-            }
-            // Handle skills array
-            if (Array.isArray(params.value)) {
-              return params.value.map((s: any) => s.name).join(', ');
-            }
-            return params.value;
-          },
-        });
-      } catch (error) {
-        console.error('Error exporting to CSV:', error);
-      }
+    console.log('CSV Export clicked, applications length:', applications.length);
+    if (!applications.length) {
+      console.warn('No applications to export');
+      return;
     }
-  }, [gridApi]);
 
-  // Handle export to Excel (CSV fallback for Community Edition)
+    setExportLoading(true);
+    try {
+      console.log('Starting CSV export with', applications.length, 'applications');
+      exportToCSV(applications, {
+        filename: `applications-${new Date().toISOString().split('T')[0]}`,
+        includeSkills: true,
+        dateFormat: 'short'
+      });
+      console.log('CSV export completed successfully');
+    } catch (error) {
+      console.error('Export failed:', error);
+    } finally {
+      setExportLoading(false);
+    }
+  }, [applications]);
+
+  // Handle export to Excel
   const handleExportExcel = useCallback(() => {
-    // In Community Edition, we'll fall back to CSV
-    handleExportCSV();
-  }, [handleExportCSV]);
+    console.log('Excel Export clicked, applications length:', applications.length);
+    if (!applications.length) {
+      console.warn('No applications to export');
+      return;
+    }
+
+    setExportLoading(true);
+    try {
+      console.log('Starting Excel export with', applications.length, 'applications');
+      exportToExcel(applications, {
+        filename: `applications-${new Date().toISOString().split('T')[0]}`,
+        includeSkills: true,
+        dateFormat: 'short'
+      });
+      console.log('Excel export completed successfully');
+    } catch (error) {
+      console.error('Export failed:', error);
+    } finally {
+      setExportLoading(false);
+    }
+  }, [applications]);
+
+  // Handle export to PDF
+  const handleExportPDF = useCallback(() => {
+    console.log('PDF Export clicked, applications length:', applications.length);
+    if (!applications.length) {
+      console.warn('No applications to export');
+      return;
+    }
+
+    setExportLoading(true);
+    try {
+      console.log('Starting PDF export with', applications.length, 'applications');
+      exportToPDF(applications, {
+        filename: `applications-${new Date().toISOString().split('T')[0]}`,
+        includeSkills: true,
+        dateFormat: 'short'
+      });
+      console.log('PDF export completed successfully');
+    } catch (error) {
+      console.error('Export failed:', error);
+    } finally {
+      setExportLoading(false);
+    }
+  }, [applications]);
 
   if (loading) {
     return (
@@ -653,17 +697,35 @@ function ApplicationsGridClient() {
             />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2">
-                  <FileSpreadsheet className="h-4 w-4" />
-                  <span>Export</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-2"
+                  disabled={exportLoading}
+                >
+                  {exportLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-3 w-3 border border-current border-t-transparent" />
+                      <span>Exporting...</span>
+                    </>
+                  ) : (
+                    <>
+                      <FileSpreadsheet className="h-4 w-4" />
+                      <span>Export</span>
+                    </>
+                  )}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={handleExportCSV} disabled={exportLoading || !applications.length}>
                   <Download className="mr-2 h-4 w-4" />
                   <span>Export as CSV</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={handleExportExcel} disabled={exportLoading || !applications.length}>
+                  <FileSpreadsheet className="mr-2 h-4 w-4" />
+                  <span>Export as Excel</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleExportPDF} disabled={exportLoading || !applications.length}>
                   <FileText className="mr-2 h-4 w-4" />
                   <span>Export as PDF</span>
                 </DropdownMenuItem>

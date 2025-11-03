@@ -72,6 +72,7 @@ export default function ApplicationsPage() {
         const formattedData = data.map((app: any, index: number) => ({
           id: app.id,
           name: app.name,
+          company: app.employer || `Company ${index + 1}`,
           position: app.jobTitle || `Position ${index + 1}`,
           status: app.applicationStatus || 'Applied',
           date: app.createdAt || new Date().toISOString().split('T')[0],
@@ -108,13 +109,53 @@ export default function ApplicationsPage() {
     );
   };
 
-  const handleExport = () => {
+  const handleExport = async () => {
+    // Determine which data to export: selected rows or all filtered data
+    const dataToExport = selectedRows.length > 0 
+      ? filteredData.filter(row => selectedRows.includes(row.id))
+      : filteredData;
+
+    if (dataToExport.length === 0) {
+      console.warn('No data to export');
+      return;
+    }
+
     setIsExporting(true);
-    // Simulate export delay
-    setTimeout(() => {
+    try {
+      // Create CSV content from selected/filtered data
+      const headers = ['ID', 'Name', 'Company', 'Position', 'Status', 'Date', 'Location', 'Experience', 'Notice Period', 'Skills'];
+      const csvRows = [
+        headers.join(','),
+        ...dataToExport.map(row => [
+          row.id,
+          `"${row.name}"`, // Wrap in quotes to handle commas
+          `"${row.company}"`,
+          `"${row.position}"`,
+          row.status,
+          row.date,
+          `"${row.location}"`,
+          row.experience,
+          row.noticePeriod,
+          `"${row.skills}"`
+        ].join(','))
+      ];
+
+      const csvContent = csvRows.join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = window.URL.createObjectURL(blob);
+
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `applications-${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Export failed:', error);
+    } finally {
       setIsExporting(false);
-      // Show success message or trigger download
-    }, 1500);
+    }
   };
 
   const filteredData = applications.filter(row => {
