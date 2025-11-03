@@ -12,7 +12,8 @@ import type {
   SortModelItem,
   Column,
   ICellRendererParams,
-  IHeaderParams
+  IHeaderParams,
+  ValueGetterParams
 } from '@ag-grid-community/core';
 
 // Import AG Grid styles
@@ -52,8 +53,8 @@ import { cn } from '@/lib/utils';
 // Define the modules used by AG Grid (Community Edition only)
 const modules = [ClientSideRowModelModule];
 
-import { Application } from '../types/application';
-import { useGridState } from '../hooks/useGridState';
+import { Application, Skill } from '../types/application';
+import { useGridUrlState } from '../hooks/useGridUrlState';
 import { ColumnVisibility } from './ColumnVisibility';
 import { loadApplications } from '../utils/loadData';
 
@@ -106,17 +107,39 @@ function StatsCard({ title, value, icon: Icon, trend, trendValue, className }: {
   );
 }
 
-export function ApplicationsGrid() {
+// Create a client-side only wrapper to prevent hydration issues
+function ApplicationsGridClient() {
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
   const [gridApi, setGridApi] = useState<GridApi | null>(null);
   const [columnApi, setColumnApi] = useState<ColumnApi | null>(null);
   
-  // Use the new useGridState hook
-  const [gridState, updateGridState] = useGridState();
-  
-  // Destructure the state for easier access
-  const { sortModel, filterModel, columnState, pagination, searchQuery } = gridState;
+  // URL State Management with nuqs
+  const {
+    hiddenColumns,
+    sortModel,
+    page,
+    pageSize,
+    searchQuery,
+    filters,
+    setHiddenColumns,
+    setSortModel,
+    setPage,
+    setPageSize,
+    setSearchQuery,
+    setFilters,
+  } = useGridUrlState();
+
+  // Handle column visibility changes
+  const handleColumnVisibilityChanged = useCallback((params: { column: Column; visible: boolean }[]) => {
+    if (!columnApi) return;
+
+    const newHiddenColumns = params
+      .filter(({ visible }) => !visible)
+      .map(({ column }) => column.getColId());
+
+    setHiddenColumns(newHiddenColumns);
+  }, [columnApi, setHiddenColumns]);
 
   // Calculate stats
   const stats = useMemo(() => {
@@ -154,23 +177,25 @@ export function ApplicationsGrid() {
 
         // Apply initial grid state once data is loaded
         if (gridApi && columnApi) {
+          // Apply sort model from URL
           if (sortModel && sortModel.length > 0) {
             columnApi.applyColumnState({
-              state: sortModel.map(sort => ({
+              state: sortModel.map((sort: any) => ({
                 colId: sort.colId,
                 sort: sort.sort || null,
               })),
               applyOrder: true,
             });
           }
-          if (filterModel) {
-            gridApi.setFilterModel(filterModel);
+
+          // Apply filters from URL
+          if (filters && Object.keys(filters).length > 0) {
+            gridApi.setFilterModel(filters);
           }
-          if (columnState && columnState.length > 0) {
-            columnApi.applyColumnState({
-              state: columnState as any,
-              applyOrder: true,
-            });
+
+          // Apply search query
+          if (searchQuery) {
+            gridApi.setGridOption('quickFilterText', searchQuery);
           }
         }
       } catch (error) {
@@ -180,171 +205,189 @@ export function ApplicationsGrid() {
     };
 
     fetchData();
-  }, [gridApi, columnApi, sortModel, filterModel, columnState]);
+  }, [gridApi, columnApi, sortModel, filters, searchQuery]);
 
   // Define column definitions - Community Edition only
-  const columnDefs = useMemo<ColDef[]>(() => [
-    {
-      headerName: 'ID',
-      field: 'id',
-      width: 120,
-      filter: 'agNumberColumnFilter',
-      sortable: true,
-      checkboxSelection: true,
-      headerCheckboxSelection: true,
-      headerClass: 'bg-gray-50 dark:bg-gray-800/50 font-medium text-sm uppercase tracking-wider text-gray-600 dark:text-gray-300',
-      cellClass: 'font-mono text-sm',
-    },
-    {
-      field: 'name',
-      headerName: 'Name ↕',
-      filter: 'agTextColumnFilter',
-      width: 200,
-      sortable: true,
-      headerClass: 'font-medium',
-      cellClass: 'text-ellipsis overflow-hidden',
-    },
-    {
-      field: 'email',
-      headerName: 'Email ↕',
-      filter: 'agTextColumnFilter',
-      width: 240,
-      sortable: true,
-      headerClass: 'font-medium',
-      cellClass: 'text-ellipsis overflow-hidden',
-    },
-    {
-      field: 'phone',
-      headerName: 'Phone ↕',
-      filter: 'agTextColumnFilter',
+  const columnDefs = useMemo<ColDef[]>(() => {
+    // Get all unique skill names from the data
+    const allSkills = Array.from(
+      new Set(
+        applications.flatMap(app => 
+          app.skills?.map(skill => skill.name) || []
+        )
+      )
+    ).sort();
+
+    // Generate skill columns
+    const skillColumns: ColDef[] = allSkills.map(skillName => ({
+      headerName: skillName,
+      field: `skill_${skillName}`,
       width: 150,
-      sortable: true,
-      headerClass: 'font-medium',
-    },
-    {
-      field: 'location',
-      headerName: 'Location ↕',
       filter: 'agTextColumnFilter',
-      width: 160,
       sortable: true,
-      headerClass: 'font-medium',
-    },
-    {
-      field: 'employer',
-      headerName: 'Employer ↕',
-      filter: 'agTextColumnFilter',
-      width: 180,
-      sortable: true,
-      headerClass: 'font-medium',
-      cellClass: 'text-ellipsis overflow-hidden',
-    },
-    {
-      field: 'overallExperience',
-      headerName: 'Experience ↕',
-      filter: 'agNumberColumnFilter',
-      width: 140,
-      sortable: true,
-      type: 'numericColumn',
-      headerClass: 'font-medium',
-      cellClass: 'text-right',
-      valueFormatter: (params: { value?: string | null }) =>
-        params.value ? `${params.value} years` : '',
-    },
-    {
-      field: 'currentWorkType',
-      headerName: 'Current Work ↕',
-      filter: 'agTextColumnFilter',
-      width: 140,
-      sortable: true,
-      headerClass: 'font-medium',
-    },
-    {
-      field: 'preferredWorkType',
-      headerName: 'Preferred Work ↕',
-      filter: 'agTextColumnFilter',
-      width: 140,
-      sortable: true,
-      headerClass: 'font-medium',
-    },
-    {
-      field: 'ctc',
-      headerName: 'Current CTC ↕',
-      filter: 'agNumberColumnFilter',
-      width: 150,
-      sortable: true,
-      type: 'numericColumn',
-      headerClass: 'font-medium',
-      cellClass: 'text-right',
-      valueFormatter: (params: { value?: string | null }) =>
-        params.value ? `₹${params.value} LPA` : '',
-    },
-    {
-      field: 'expectedCTC',
-      headerName: 'Expected CTC ↕',
-      filter: 'agNumberColumnFilter',
-      width: 150,
-      sortable: true,
-      type: 'numericColumn',
-      headerClass: 'font-medium',
-      cellClass: 'text-right',
-      valueFormatter: (params: { value?: string | null }) =>
-        params.value ? `₹${params.value} LPA` : '',
-    },
-    {
-      field: 'applicationStatus',
-      headerName: 'Status ↕',
-      filter: 'agTextColumnFilter',
-      width: 140,
-      sortable: true,
-      headerClass: 'font-medium',
-      cellRenderer: (params: ICellRendererParams) => {
-        const status = params.value;
-        const statusColors = {
-          'Applied': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
-          'In Review': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
-          'Interview': 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
-          'Offer': 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
-          'Rejected': 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
-        };
-        return `<span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${statusColors[status as keyof typeof statusColors] || 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400'}">${status}</span>`;
+      valueGetter: (params: ValueGetterParams) => {
+        const skills = params.data?.skills as Skill[] | undefined;
+        const skill = skills?.find(s => s.name === skillName);
+        return skill ? `${skill.years} yrs` : '';
       },
-    },
-    {
-      field: 'matchPercentage',
-      headerName: 'Match % ↕',
-      filter: 'agNumberColumnFilter',
-      width: 120,
-      sortable: true,
-      type: 'numericColumn',
       headerClass: 'font-medium',
-      cellClass: 'text-right',
-      valueFormatter: (params: { value?: number | null }) =>
-        params.value !== undefined && params.value !== null ? `${params.value}%` : '',
-    },
-    {
-      field: 'createdAt',
-      headerName: 'Applied Date ↕',
-      filter: 'agDateColumnFilter',
-      width: 140,
-      sortable: true,
-      headerClass: 'font-medium',
-      valueFormatter: (params: { value?: string | null }) =>
-        params.value ? new Date(params.value).toLocaleDateString() : '',
-    },
-    {
-      field: 'skills',
-      headerName: 'Skills ↕',
-      filter: 'agTextColumnFilter',
-      width: 200,
-      sortable: false,
-      headerClass: 'font-medium',
-      cellRenderer: (params: ICellRendererParams) => {
-        const skills = params.value || [];
-        const skillNames = skills.map((skill: any) => skill.name).join(', ');
-        return `<span class="text-sm text-gray-600 dark:text-gray-400">${skillNames}</span>`;
+      cellClass: 'text-center',
+    }));
+
+    // Base columns (excluding the original skills column)
+    const baseColumns: ColDef[] = [
+      {
+        headerName: 'ID',
+        field: 'id',
+        width: 120,
+        filter: 'agNumberColumnFilter',
+        sortable: true,
+        checkboxSelection: true,
+        headerCheckboxSelection: true,
+        headerClass: 'bg-gray-50 dark:bg-gray-800/50 font-medium text-sm uppercase tracking-wider text-gray-600 dark:text-gray-300',
+        cellClass: 'font-mono text-sm',
       },
-    },
-  ], []);
+      {
+        field: 'name',
+        headerName: 'Name ↕',
+        filter: 'agTextColumnFilter',
+        width: 200,
+        sortable: true,
+        headerClass: 'font-medium',
+        cellClass: 'text-ellipsis overflow-hidden',
+      },
+      {
+        field: 'email',
+        headerName: 'Email ↕',
+        filter: 'agTextColumnFilter',
+        width: 240,
+        sortable: true,
+        headerClass: 'font-medium',
+        cellClass: 'text-ellipsis overflow-hidden',
+      },
+      {
+        field: 'phone',
+        headerName: 'Phone ↕',
+        filter: 'agTextColumnFilter',
+        width: 150,
+        sortable: true,
+        headerClass: 'font-medium',
+      },
+      {
+        field: 'location',
+        headerName: 'Location ↕',
+        filter: 'agTextColumnFilter',
+        width: 160,
+        sortable: true,
+        headerClass: 'font-medium',
+      },
+      {
+        field: 'employer',
+        headerName: 'Employer ↕',
+        filter: 'agTextColumnFilter',
+        width: 180,
+        sortable: true,
+        headerClass: 'font-medium',
+        cellClass: 'text-ellipsis overflow-hidden',
+      },
+      {
+        field: 'overallExperience',
+        headerName: 'Experience ↕',
+        filter: 'agNumberColumnFilter',
+        width: 140,
+        sortable: true,
+        type: 'numericColumn',
+        headerClass: 'font-medium',
+        cellClass: 'text-right',
+        valueFormatter: (params: { value?: string | null }) =>
+          params.value ? `${params.value} years` : '',
+      },
+      {
+        field: 'currentWorkType',
+        headerName: 'Current Work ↕',
+        filter: 'agTextColumnFilter',
+        width: 140,
+        sortable: true,
+        headerClass: 'font-medium',
+      },
+      {
+        field: 'preferredWorkType',
+        headerName: 'Preferred Work ↕',
+        filter: 'agTextColumnFilter',
+        width: 140,
+        sortable: true,
+        headerClass: 'font-medium',
+      },
+      {
+        field: 'ctc',
+        headerName: 'Current CTC ↕',
+        filter: 'agNumberColumnFilter',
+        width: 150,
+        sortable: true,
+        type: 'numericColumn',
+        headerClass: 'font-medium',
+        cellClass: 'text-right',
+        valueFormatter: (params: { value?: string | null }) =>
+          params.value ? `₹${params.value} LPA` : '',
+      },
+      {
+        field: 'expectedCTC',
+        headerName: 'Expected CTC ↕',
+        filter: 'agNumberColumnFilter',
+        width: 150,
+        sortable: true,
+        type: 'numericColumn',
+        headerClass: 'font-medium',
+        cellClass: 'text-right',
+        valueFormatter: (params: { value?: string | null }) =>
+          params.value ? `₹${params.value} LPA` : '',
+      },
+      {
+        field: 'applicationStatus',
+        headerName: 'Status ↕',
+        filter: 'agTextColumnFilter',
+        width: 140,
+        sortable: true,
+        headerClass: 'font-medium',
+        cellRenderer: (params: ICellRendererParams) => {
+          const status = params.value;
+          const statusColors = {
+            'Applied': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
+            'In Review': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
+            'Interview': 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
+            'Offer': 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+            'Rejected': 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
+          };
+          return `<span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${statusColors[status as keyof typeof statusColors] || 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400'}">${status}</span>`;
+        },
+      },
+      {
+        field: 'matchPercentage',
+        headerName: 'Match % ↕',
+        filter: 'agNumberColumnFilter',
+        width: 120,
+        sortable: true,
+        type: 'numericColumn',
+        headerClass: 'font-medium',
+        cellClass: 'text-right',
+        valueFormatter: (params: { value?: number | null }) =>
+          params.value !== undefined && params.value !== null ? `${params.value}%` : '',
+      },
+      {
+        field: 'createdAt',
+        headerName: 'Applied Date ↕',
+        filter: 'agDateColumnFilter',
+        width: 140,
+        sortable: true,
+        headerClass: 'font-medium',
+        valueFormatter: (params: { value?: string | null }) =>
+          params.value ? new Date(params.value).toLocaleDateString() : '',
+      },
+      // Original skills column is removed - replaced with individual skill columns
+    ];
+
+    return [...baseColumns, ...skillColumns];
+  }, [applications]);
 
   // Get current theme
   const { theme } = useTheme();
@@ -375,73 +418,58 @@ export function ApplicationsGrid() {
           colId: col.colId || '',
           sort: col.sort || null,
         }));
-      updateGridState({ sortModel: newSortModel });
+      setSortModel(newSortModel);
     };
     
     const handleFilterChanged = () => {
       const filterModel = api.getFilterModel();
-      updateGridState({ filterModel });
+      setFilters(filterModel);
     };
     
     const handleColumnStateChanged = () => {
-      const columnState = columnApi.getColumnState();
-      updateGridState({ columnState });
+      const columnStates = columnApi.getColumnState();
+      const hiddenColumns = columnStates
+        .filter((col: any) => col.hide) // Get columns that are hidden
+        .map((col: any) => col.colId);
+      setHiddenColumns(hiddenColumns);
     };
     
     api.addEventListener('sortChanged', handleSortChanged);
     api.addEventListener('filterChanged', handleFilterChanged);
-    api.addEventListener('columnMoved', handleColumnStateChanged);
-    api.addEventListener('columnResized', handleColumnStateChanged);
+    columnApi.addEventListener('columnVisible', handleColumnStateChanged);
     
     // Cleanup function
     return () => {
       api.removeEventListener('sortChanged', handleSortChanged);
       api.removeEventListener('filterChanged', handleFilterChanged);
-      api.removeEventListener('columnMoved', handleColumnStateChanged);
-      api.removeEventListener('columnResized', handleColumnStateChanged);
+      columnApi.removeEventListener('columnVisible', handleColumnStateChanged);
     };
-  }, [updateGridState]);
+  }, [setSortModel, setFilters, setHiddenColumns]);
 
   // Set initial search query from URL
   useEffect(() => {
     if (gridApi && !loading && searchQuery) {
-      const searchInput = document.querySelector('input[type="search"]') as HTMLInputElement;
-      if (searchInput) {
-        searchInput.value = searchQuery;
-        // Use filter instead of quickFilter
-        gridApi.setFilterModel({
-          ...(gridState?.filterModel || {}),
-          globalQuickFilter: searchQuery
-        });
-      }
+      gridApi.setGridOption('quickFilterText', searchQuery);
     }
-  }, [gridApi, loading, searchQuery, gridState?.filterModel]);
+  }, [gridApi, loading, searchQuery]);
 
   // Handle search
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
+    setSearchQuery(value);
     if (gridApi) {
-      // Use filter instead of quickFilter which might not be available
-      gridApi.setFilterModel({
-        ...(gridState?.filterModel || {}),
-        ...(value ? { globalQuickFilter: value } : { globalQuickFilter: undefined })
-      });
+      gridApi.setGridOption('quickFilterText', value);
     }
-    updateGridState({ searchQuery: value });
   };
 
   const onPaginationChanged = useCallback(() => {
     if (gridApi) {
-      const currentPage = gridApi.paginationGetCurrentPage();
+      const currentPage = gridApi.paginationGetCurrentPage() + 1; // AG Grid is 0-indexed
       const pageSize = gridApi.paginationGetPageSize();
-      updateGridState({
-        pagination: {
-          currentPage,
-          pageSize,
-        },
-      });
+      setPage(currentPage);
+      setPageSize(pageSize);
     }
-  }, [gridApi, updateGridState]);
+  }, [gridApi, setPage, setPageSize]);
 
   // Grid options with enhanced theming and features
   const gridOptions: GridOptions = {
@@ -502,8 +530,7 @@ export function ApplicationsGrid() {
     tooltipHideDelay: 2000,
     // Enable pagination
     pagination: true,
-    paginationPageSize: 20,
-    cacheBlockSize: 20,
+    paginationPageSize: pageSize,
     // Enable column animations
     defaultColGroupDef: { marqueeSelection: true } as any,
     // Enable keyboard navigation
@@ -617,38 +644,32 @@ export function ApplicationsGrid() {
             placeholder="Search by name, email, or location..."
             className="pl-9 w-full"
             value={searchQuery}
-            onChange={(e) => updateGridState({ searchQuery: e.target.value })}
+            onChange={handleSearch}
           />
-        </div>
-        <div className="flex items-center space-x-2 w-full sm:w-auto">
-          <ColumnVisibility
-            columnDefs={columnDefs}
-            onColumnVisibilityChanged={(params: { column: Column; visible: boolean }[]) => {
-              if (columnApi) {
-                params.forEach(({ column, visible }) => {
-                  columnApi.setColumnVisible(column.getColId(), visible);
-                });
-              }
-            }}
-          />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-2">
-                <FileSpreadsheet className="h-4 w-4" />
-                <span>Export</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem>
-                <Download className="mr-2 h-4 w-4" />
-                <span>Export as CSV</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <FileText className="mr-2 h-4 w-4" />
-                <span>Export as PDF</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div className="flex items-center space-x-2 w-full sm:w-auto">
+            <ColumnVisibility
+              columnDefs={columnDefs}
+              onColumnVisibilityChanged={handleColumnVisibilityChanged}
+            />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-2">
+                  <FileSpreadsheet className="h-4 w-4" />
+                  <span>Export</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem>
+                  <Download className="mr-2 h-4 w-4" />
+                  <span>Export as CSV</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <FileText className="mr-2 h-4 w-4" />
+                  <span>Export as PDF</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
           <Button size="sm" className="gap-2 shadow-sm hover:shadow-md transition-all duration-200 hover:scale-[1.02]">
             <Plus className="h-4 w-4" />
             <span>Add Application</span>
@@ -683,6 +704,7 @@ export function ApplicationsGrid() {
           columnDefs={columnDefs}
           gridOptions={gridOptions}
           onGridReady={onGridReady}
+          onPaginationChanged={onPaginationChanged}
           modules={modules}
           loadingOverlayComponent="customLoadingOverlay"
           noRowsOverlayComponent="customNoRowsOverlay"
@@ -691,7 +713,7 @@ export function ApplicationsGrid() {
           animateRows={true}
           // Enable pagination
           pagination={true}
-          paginationPageSize={20}
+          paginationPageSize={pageSize}
           // Enable row selection
           rowSelection="multiple"
           suppressRowClickSelection={true}
@@ -711,4 +733,37 @@ export function ApplicationsGrid() {
       </div>
     </div>
   );
+}
+
+// Export with client-side only rendering to prevent hydration issues
+export function ApplicationsGrid() {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return (
+      <div className="space-y-6 p-6">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-32 rounded-xl" />
+          ))}
+        </div>
+        <div className="space-y-4">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <Skeleton className="h-10 w-48" />
+            <div className="flex space-x-2">
+              <Skeleton className="h-10 w-32" />
+              <Skeleton className="h-10 w-24" />
+            </div>
+          </div>
+          <Skeleton className="h-[600px] w-full rounded-lg" />
+        </div>
+      </div>
+    );
+  }
+
+  return <ApplicationsGridClient />;
 }
