@@ -3,6 +3,51 @@
 ## Overview
 Build a sophisticated data grid application using Next.js 15 and React 19 that demonstrates your expertise in modern web development practices, state management, and TypeScript.
 
+## 🚀 Implementation Approach
+
+### Architecture & Design
+- **Component-Based Architecture**: Built with reusable, modular components following the Single Responsibility Principle
+- **Custom Hooks**: Created custom hooks (`useGridState`, `useGridUrlState`) for state management logic
+- **Type-First Development**: Implemented strict TypeScript types for all components and utilities
+- **Performance Optimization**: Leveraged React.memo, useMemo, and useCallback for optimal rendering
+
+### Key Technical Decisions
+1. **State Management**
+   - Used nuqs for URL-based state management to enable shareable links and browser history
+   - Implemented a custom hook (`useGridState`) to abstract grid state management
+   - Persisted column state, filters, and sort order in the URL
+
+2. **Data Grid Implementation**
+   - Chose AG Grid Community for its robust feature set and performance
+   - Implemented custom cell renderers for better UX (e.g., status badges, action buttons)
+   - Added support for dynamic column generation based on skills data
+
+3. **Type Safety**
+   - Created comprehensive TypeScript interfaces for all data structures
+   - Used generics for reusable components
+   - Implemented type guards for runtime type checking
+
+4. **UI/UX Considerations**
+   - Implemented responsive design with mobile-first approach
+   - Added loading states and error boundaries
+   - Included keyboard navigation and ARIA labels for accessibility
+
+### Development Workflow
+1. **Setup & Configuration**
+   - Initialized Next.js with TypeScript template
+   - Integrated shadcn/ui for consistent UI components
+   - Set up ESLint, Prettier, and Git hooks
+
+2. **Feature Implementation**
+   - Implemented core data grid functionality first
+   - Added URL state synchronization
+   - Enhanced with additional features (export, search, filters)
+
+3. **Testing & Refinement**
+   - Manual testing of all user flows
+   - Performance profiling and optimization
+   - Code review and refactoring
+
 ## Requirements
 
 ### Tech Stack
@@ -53,33 +98,98 @@ Build a sophisticated data grid application using Next.js 15 and React 19 that d
 - Git commit history
 - Documentation quality
 
-## Implementation Steps
+## 🛠️ Implementation Steps
 
-1. **Setup**
+### 1. Project Setup
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/sxp-data-grid-challenge-next.js.git
+cd sxp-data-grid-challenge-next.js
+
+# Install dependencies
+bun install
+
+# Set up environment variables
+cp .env.example .env.local
+```
+
+### 2. Development
+```bash
+# Start development server
+bun dev
+
+# Run linter
+bun run lint
+
+# Run type checking
+bun run type-check
+```
+
+### 3. Building for Production
+```bash
+# Create production build
+bun run build
+
+# Start production server
+bun run start
+
+# Analyze bundle size
+ANALYZE=true bun run build
+```
+
+### 4. Testing
+```bash
+# Run tests
+bun test
+
+# Run tests in watch mode
+bun test --watch
+
+# Generate test coverage report
+bun test --coverage
+```
+
+## 📦 Submission
+
+### Completed Implementation
+- [x] **Core Data Grid** with sorting, filtering, and pagination
+- [x] **URL State Management** using nuqs
+- [x] **TypeScript** with strict type checking
+- [x] **Responsive Design** for all screen sizes
+- [x] **Export Functionality** (Excel, CSV)
+- [x] **Comprehensive Documentation**
+
+### Deployment
+1. Push your code to a public GitHub repository:
    ```bash
-   git clone <base-project-url>
-   cd <project-directory>
-   bun install # or npm install
+   git remote add origin <your-repo-url>
+   git branch -M main
+   git push -u origin main
    ```
 
-2. **Development**
-   ```bash
-   bun dev # or npm run dev
-   ```
+2. Deploy to Vercel (recommended):
+   - Connect your GitHub repository to Vercel
+   - Configure build settings:
+     - Build Command: `bun run build`
+     - Output Directory: `.next`
+     - Install Command: `bun install`
+   - Add environment variables if needed
+   - Deploy!
 
-3. **Build**
-   ```bash
-   bun run build # or npm run build
-   ```
-
-## Submission
-1. Create your public GitHub repository
-2. Implement the solution
-3. Update README with:
-   - Setup instructions
-   - Development commands
-   - Any additional features/notes
-4. Share repository link with us
+### Repository Structure
+```
+├── .github/           # GitHub workflows and templates
+├── public/            # Static files
+├── src/
+│   ├── app/           # Next.js 13+ app directory
+│   ├── components/    # Reusable components
+│   ├── features/      # Feature-based modules
+│   ├── lib/           # Utilities and helpers
+│   └── styles/        # Global styles
+├── .env.example      # Environment variables template
+├── next.config.js    # Next.js configuration
+└── package.json      # Project dependencies
+```
 
 ## Time Expectation
 - Take the time you need to deliver quality work
