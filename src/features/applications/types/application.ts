@@ -1,8 +1,7 @@
 export interface Skill {
+  id: string;
   name: string;
-  experience: string;
-  lastUsed: string;
-  isPrimary: boolean;
+  years: string;
 }
 
 export interface Application {
@@ -19,11 +18,15 @@ export interface Application {
   currentWorkType: string | null;
   preferredWorkType: string;
   matchPercentage: number;
-  offerCTC: string;
+  offerCTC: string | number;
   offersInHand: string;
   overallExperience: string;
   willingToRelocate: boolean;
   expectedCTC: string;
+  noticePeriod: string;
+  applicationStatus: string;
+  attachmentFileExtension: string;
+  createdAt: string;
   skills: Skill[];
   [key: string]: any; // For dynamic access to other properties
 }

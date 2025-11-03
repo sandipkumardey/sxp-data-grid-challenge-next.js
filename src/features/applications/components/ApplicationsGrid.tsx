@@ -46,14 +46,15 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { FileText, Clock, MessageCircle, Target } from 'lucide-react';
-import { ColumnVisibility } from './ColumnVisibility';
+import { FileText, Clock, MessageCircle, Target, Search, FileSpreadsheet, Download, Plus } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 // Define the modules used by AG Grid (Community Edition only)
 const modules = [ClientSideRowModelModule];
 
 import { Application } from '../types/application';
 import { useGridState } from '../hooks/useGridState';
+import { ColumnVisibility } from './ColumnVisibility';
 import { loadApplications } from '../utils/loadData';
 
 
@@ -122,22 +123,24 @@ export function ApplicationsGrid() {
     if (!applications.length) return null;
     
     const totalApplications = applications.length;
-    const inReview = applications.filter(app => app.status === 'In Review').length;
-    const interviewStage = applications.filter(app => 
-      ['Phone Screen', 'Technical Interview', 'Onsite'].includes(app.status)
+    const applicationsWithOffers = applications.filter(app => 
+      parseInt(app.offersInHand) > 0
     ).length;
-    const offerStage = applications.filter(app => 
-      ['Offer Received', 'Negotiating'].includes(app.status)
+    const highMatchApplications = applications.filter(app => 
+      app.matchPercentage >= 80
+    ).length;
+    const willingToRelocate = applications.filter(app => 
+      app.willingToRelocate
     ).length;
     
     return {
       total: totalApplications,
-      inReview,
-      interviewStage,
-      offerStage,
-      inReviewPercent: Math.round((inReview / totalApplications) * 100),
-      interviewPercent: Math.round((interviewStage / totalApplications) * 100),
-      offerPercent: Math.round((offerStage / totalApplications) * 100),
+      applicationsWithOffers,
+      highMatchApplications,
+      willingToRelocate,
+      offersPercent: Math.round((applicationsWithOffers / totalApplications) * 100),
+      matchPercent: Math.round((highMatchApplications / totalApplications) * 100),
+      relocatePercent: Math.round((willingToRelocate / totalApplications) * 100),
     };
   }, [applications]);
 
@@ -184,13 +187,22 @@ export function ApplicationsGrid() {
     {
       headerName: 'ID',
       field: 'id',
-      width: 100,
+      width: 120,
       filter: 'agNumberColumnFilter',
       sortable: true,
       checkboxSelection: true,
       headerCheckboxSelection: true,
       headerClass: 'bg-gray-50 dark:bg-gray-800/50 font-medium text-sm uppercase tracking-wider text-gray-600 dark:text-gray-300',
       cellClass: 'font-mono text-sm',
+    },
+    {
+      field: 'name',
+      headerName: 'Name ↕',
+      filter: 'agTextColumnFilter',
+      width: 200,
+      sortable: true,
+      headerClass: 'font-medium',
+      cellClass: 'text-ellipsis overflow-hidden',
     },
     {
       field: 'email',
@@ -202,6 +214,14 @@ export function ApplicationsGrid() {
       cellClass: 'text-ellipsis overflow-hidden',
     },
     {
+      field: 'phone',
+      headerName: 'Phone ↕',
+      filter: 'agTextColumnFilter',
+      width: 150,
+      sortable: true,
+      headerClass: 'font-medium',
+    },
+    {
       field: 'location',
       headerName: 'Location ↕',
       filter: 'agTextColumnFilter',
@@ -210,14 +230,25 @@ export function ApplicationsGrid() {
       headerClass: 'font-medium',
     },
     {
+      field: 'employer',
+      headerName: 'Employer ↕',
+      filter: 'agTextColumnFilter',
+      width: 180,
+      sortable: true,
+      headerClass: 'font-medium',
+      cellClass: 'text-ellipsis overflow-hidden',
+    },
+    {
       field: 'overallExperience',
       headerName: 'Experience ↕',
       filter: 'agNumberColumnFilter',
-      width: 160,
+      width: 140,
       sortable: true,
       type: 'numericColumn',
       headerClass: 'font-medium',
       cellClass: 'text-right',
+      valueFormatter: (params: { value?: string | null }) =>
+        params.value ? `${params.value} years` : '',
     },
     {
       field: 'currentWorkType',
@@ -244,8 +275,8 @@ export function ApplicationsGrid() {
       type: 'numericColumn',
       headerClass: 'font-medium',
       cellClass: 'text-right',
-      valueFormatter: (params: { value?: number | null }) =>
-        params.value !== undefined && params.value !== null ? `${params.value} LPA` : '',
+      valueFormatter: (params: { value?: string | null }) =>
+        params.value ? `₹${params.value} LPA` : '',
     },
     {
       field: 'expectedCTC',
@@ -256,8 +287,62 @@ export function ApplicationsGrid() {
       type: 'numericColumn',
       headerClass: 'font-medium',
       cellClass: 'text-right',
+      valueFormatter: (params: { value?: string | null }) =>
+        params.value ? `₹${params.value} LPA` : '',
+    },
+    {
+      field: 'applicationStatus',
+      headerName: 'Status ↕',
+      filter: 'agTextColumnFilter',
+      width: 140,
+      sortable: true,
+      headerClass: 'font-medium',
+      cellRenderer: (params: ICellRendererParams) => {
+        const status = params.value;
+        const statusColors = {
+          'Applied': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
+          'In Review': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
+          'Interview': 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
+          'Offer': 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+          'Rejected': 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
+        };
+        return `<span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${statusColors[status as keyof typeof statusColors] || 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400'}">${status}</span>`;
+      },
+    },
+    {
+      field: 'matchPercentage',
+      headerName: 'Match % ↕',
+      filter: 'agNumberColumnFilter',
+      width: 120,
+      sortable: true,
+      type: 'numericColumn',
+      headerClass: 'font-medium',
+      cellClass: 'text-right',
       valueFormatter: (params: { value?: number | null }) =>
-        params.value !== undefined && params.value !== null ? `${params.value} LPA` : '',
+        params.value !== undefined && params.value !== null ? `${params.value}%` : '',
+    },
+    {
+      field: 'createdAt',
+      headerName: 'Applied Date ↕',
+      filter: 'agDateColumnFilter',
+      width: 140,
+      sortable: true,
+      headerClass: 'font-medium',
+      valueFormatter: (params: { value?: string | null }) =>
+        params.value ? new Date(params.value).toLocaleDateString() : '',
+    },
+    {
+      field: 'skills',
+      headerName: 'Skills ↕',
+      filter: 'agTextColumnFilter',
+      width: 200,
+      sortable: false,
+      headerClass: 'font-medium',
+      cellRenderer: (params: ICellRendererParams) => {
+        const skills = params.value || [];
+        const skillNames = skills.map((skill: any) => skill.name).join(', ');
+        return `<span class="text-sm text-gray-600 dark:text-gray-400">${skillNames}</span>`;
+      },
     },
   ], []);
 
@@ -497,27 +582,27 @@ export function ApplicationsGrid() {
             className="shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm bg-card/80 border border-border/50 hover:scale-[1.02] dark:bg-[#262b34] dark:border-[#343a46] dark:shadow-inner"
           />
           <StatsCard 
-            title="In Review" 
-            value={`${stats.inReview} (${stats.inReviewPercent}%)`} 
-            icon={Clock}
-            trend="up"
-            trendValue="12%"
-            className="shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm bg-card/80 border border-border/50 hover:scale-[1.02] dark:bg-[#262b34] dark:border-[#343a46] dark:shadow-inner"
-          />
-          <StatsCard 
-            title="Interview Stage" 
-            value={`${stats.interviewStage} (${stats.interviewPercent}%)`} 
-            icon={MessageCircle}
-            trend="up"
-            trendValue="5%"
-            className="shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm bg-card/80 border border-border/50 hover:scale-[1.02] dark:bg-[#262b34] dark:border-[#343a46] dark:shadow-inner"
-          />
-          <StatsCard 
-            title="Offer Stage" 
-            value={`${stats.offerStage} (${stats.offerPercent}%)`} 
+            title="High Match (80%+)" 
+            value={`${stats.highMatchApplications} (${stats.matchPercent}%)`} 
             icon={Target}
             trend="up"
-            trendValue="3%"
+            trendValue="80%"
+            className="shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm bg-card/80 border border-border/50 hover:scale-[1.02] dark:bg-[#262b34] dark:border-[#343a46] dark:shadow-inner"
+          />
+          <StatsCard 
+            title="Offers in Hand" 
+            value={`${stats.applicationsWithOffers} (${stats.offersPercent}%)`} 
+            icon={MessageCircle}
+            trend="up"
+            trendValue="23%"
+            className="shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm bg-card/80 border border-border/50 hover:scale-[1.02] dark:bg-[#262b34] dark:border-[#343a46] dark:shadow-inner"
+          />
+          <StatsCard 
+            title="Willing to Relocate" 
+            value={`${stats.willingToRelocate} (${stats.relocatePercent}%)`} 
+            icon={Clock}
+            trend="up"
+            trendValue="95%"
             className="shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm bg-card/80 border border-border/50 hover:scale-[1.02] dark:bg-[#262b34] dark:border-[#343a46] dark:shadow-inner"
           />
         </div>
@@ -529,7 +614,7 @@ export function ApplicationsGrid() {
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <Input
             type="text"
-            placeholder="Search applications..."
+            placeholder="Search by name, email, or location..."
             className="pl-9 w-full"
             value={searchQuery}
             onChange={(e) => updateGridState({ searchQuery: e.target.value })}
