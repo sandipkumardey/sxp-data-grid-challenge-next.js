@@ -471,6 +471,7 @@ export function ApplicationsGrid() {
             title="Total Applications" 
             value={stats.total} 
             icon={FileText} 
+            className="shadow-lg hover:shadow-xl transition-shadow duration-300 backdrop-blur-sm bg-card/80 border border-border/50"
           />
           <StatsCard 
             title="In Review" 
@@ -478,6 +479,7 @@ export function ApplicationsGrid() {
             icon={ClipboardList}
             trend="up"
             trendValue="12%"
+            className="shadow-lg hover:shadow-xl transition-shadow duration-300 backdrop-blur-sm bg-card/80 border border-border/50"
           />
           <StatsCard 
             title="Interview Stage" 
@@ -485,6 +487,7 @@ export function ApplicationsGrid() {
             icon={Users}
             trend="up"
             trendValue="5%"
+            className="shadow-lg hover:shadow-xl transition-shadow duration-300 backdrop-blur-sm bg-card/80 border border-border/50"
           />
           <StatsCard 
             title="Offer Stage" 
@@ -492,6 +495,7 @@ export function ApplicationsGrid() {
             icon={Award}
             trend="up"
             trendValue="3%"
+            className="shadow-lg hover:shadow-xl transition-shadow duration-300 backdrop-blur-sm bg-card/80 border border-border/50"
           />
         </div>
       )}

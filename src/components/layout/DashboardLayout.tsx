@@ -91,10 +91,13 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       {/* Sidebar */}
       <div
         className={cn(
-          'fixed inset-y-0 left-0 z-30 w-64 transform border-r border-gray-200 bg-white shadow-lg transition-transform duration-300 ease-in-out dark:border-gray-800 dark:bg-gray-900',
+          'fixed inset-y-0 left-0 z-30 w-64 transform border-r transition-all duration-300 ease-in-out',
           !sidebarOpen && '-translate-x-full',
           'lg:relative lg:translate-x-0',
+          sidebarOpen ? 'border-border bg-background/95 backdrop-blur-md shadow-xl' : 'border-transparent'
         )}
+        role="navigation"
+        aria-label="Main navigation"
       >
         <div className="flex h-16 items-center justify-between border-b border-gray-200 px-6 dark:border-gray-800">
           <div className="flex items-center space-x-2">
@@ -130,11 +133,12 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                       <Link
                         href={item.href}
                         className={cn(
-                          'group flex items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
+                          'group flex items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
                           isActive
-                            ? 'bg-primary-50 text-primary-700 dark:bg-gray-800 dark:text-primary-400'
-                            : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800',
+                            ? 'bg-primary text-primary-foreground shadow-md border border-primary/20 dark:bg-primary/90 dark:text-primary-foreground dark:shadow-lg dark:border-primary/30'
+                            : 'text-gray-700 hover:bg-gray-100 hover:shadow-sm dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:shadow-sm',
                         )}
+                        aria-current={isActive ? 'page' : undefined}
                       >
                         <Icon
                           className={cn(
@@ -182,12 +186,13 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                       <TooltipTrigger asChild>
                         <Link
                           href={item.href}
-                          className={cn(
-                            'group flex items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
-                            isActive
-                              ? 'bg-primary-50 text-primary-700 dark:bg-gray-800 dark:text-primary-400'
-                              : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800',
-                          )}
+                        className={cn(
+                          'group flex items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
+                          isActive
+                            ? 'bg-primary text-primary-foreground shadow-md border border-primary/20 dark:bg-primary/90 dark:text-primary-foreground dark:shadow-lg dark:border-primary/30'
+                            : 'text-gray-700 hover:bg-gray-100 hover:shadow-sm dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:shadow-sm',
+                        )}
+                        aria-current={isActive ? 'page' : undefined}
                         >
                           <Icon
                             className={cn(
